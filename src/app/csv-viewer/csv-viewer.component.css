@@ -1,0 +1,165 @@
+.container {
+  background-color: black;
+  background-image: url("../../SuMo-logos/SuMo-logos_white.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+#home {
+  color: white;
+  position: absolute;
+  left: 45%;
+}
+
+#sumo {
+  position: fixed;
+  left: 94%;
+}
+/* CSV report*/
+#csvTable{
+  border-collapse: collapse ;
+  height: 90%;
+  position: fixed;
+  left: 2%;
+  right: 2%;
+  top: 15%;
+  bottom: 2%;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.11);
+  overflow: auto;
+}
+table td{
+  color: white;
+  padding: 12px;
+  width: 100px;
+  column-gap: 10px;
+  background-color: rgba(255, 255, 255, 0.11);
+}
+
+
+.sjs-table{
+  padding-top: 5px;
+  border: 1px;
+  text-align: left;
+  column-width: 100px;
+  color: white;
+  margin: auto;
+}
+
+#toolbar {
+  background-color: black;
+  background-image: url("../../SuMo-logos/SuMo-logos_withoutName_white.png");
+  background-repeat: no-repeat;
+  height: 60px;
+  min-width: 1280px;
+}
+
+
+table.sjs-table > tbody > tr:first-child > td {
+  position: sticky;
+  background-color: #7b1fa1;
+  top: 0;
+}
+
+table.sjs-table > tbody > tr:first-child > td:first-child{
+  border-top-left-radius: 6px;
+}
+table.sjs-table > tbody > tr:first-child > td:last-child{
+  border-top-right-radius: 6px;
+}
+.blur {
+  background-color: black;
+  background-image: url("../../SuMo-logos/SuMo-logos_white.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: blur(35px);
+  position: fixed;
+  left: 2%;
+  right: 2%;
+  top: 15%;
+  bottom: 2%;
+  object-fit: fill;
+}
+/* SuMo report*/
+
+
+.terminal pre {
+  font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+  color: white;
+  padding: 0 1rem 1rem;
+  margin-top: 4px;
+  margin-left: 4px;
+  margin-right: 4px;
+  left: 2%;
+  right: 2%;
+  top: 15%;
+  bottom: 2%;
+  position: fixed;
+  overflow: auto;
+}
+
+#Report{
+  height: 90%;
+  position: fixed;
+  left: 2%;
+  right: 2%;
+  top: 15%;
+  bottom: 2%;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.11);
+
+}
+/*Regression */
+#Regression{
+  height: 90%;
+  position: fixed;
+  left: 2%;
+  right: 2%;
+  top: 15%;
+  bottom: 2%;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.11);
+}
+
+
+/*Operators Report*/
+
+#operatorTable{
+  border-collapse: collapse ;
+  height: 90%;
+  position: fixed;
+  left: 2%;
+  right: 2%;
+  top: 15%;
+  bottom: 2%;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.11);
+  overflow: auto;
+}
+table td{
+  color: white;
+  padding: 12px;
+  width: 100px;
+  column-gap: 10px;
+  background-color: rgba(255, 255, 255, 0.11);
+}
+
+
+.sjs-opTable{
+  padding-top: 5px;
+  border: 1px;
+  text-align: left;
+  column-width: 100px;
+  color: white;
+  margin: auto;
+}
+
+
+table.sjs-opTable > tbody > tr:first-child > td {
+  position: sticky;
+  background-color: #7b1fa1;
+  top: 0;
+  color: white;
+}

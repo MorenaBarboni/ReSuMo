@@ -1,0 +1,271 @@
+<body xmlns="http://www.w3.org/1999/html">
+<div class="container">
+
+  <p>
+    <mat-toolbar id="toolbar">
+      <span id="sumo">SuMo</span>
+      <span id="home">Solidity Mutator</span>
+    </mat-toolbar>
+  </p>
+
+
+  <div id="group">
+    <mat-tab-group dynamicHeight mat-align-tabs="start">
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>home</mat-icon>
+        </ng-template>
+
+
+        <div id="test">
+          <button mat-raised-button color="primary" class="commandContainer" (click)="test()">Test</button>
+        </div>
+        <div id="preflight">
+          <button mat-raised-button color="primary" class="commandContainer" (click)="preflight()">Preflight</button>
+        </div>
+        <div id="mutate">
+          <button mat-raised-button color="primary" class="commandContainer" (click)="mutate()">Mutate</button>
+        </div>
+        <div id="clean">
+          <button mat-raised-button color="primary" class="commandContainer" (click)="clean()">Clean</button>
+        </div>
+        <div id="deleteResume">
+          <button mat-raised-button color="primary" class="commandContainer" (click)="openDialog()">Delete</button>
+        </div>
+        <div id="restore">
+          <button mat-raised-button color="primary" class="commandContainer" (click)="restore()">Restore</button>
+        </div>
+
+
+        <div>
+          <a href="../csv"><button mat-raised-button color="primary" id="reportCSV" >Show Report Page</button></a>
+        </div>
+
+        <div class="terminal" id="clipboard-terminal-textarea">
+          <pre>{{this.value}}</pre>
+        </div>
+
+      </mat-tab>
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>settings</mat-icon>
+        </ng-template>
+        <div class="blur"></div>
+
+        <div id="container">
+          <mat-form-field id="form1" appearance="legacy">
+            <mat-label class="label">SuMo Path</mat-label>
+            <input matInput [(ngModel)]="sumoDir">
+          </mat-form-field>
+          <mat-form-field id="form2" appearance="legacy">
+            <mat-label class="label">Project Path</mat-label>
+            <input matInput [(ngModel)]="projectPath">
+          </mat-form-field>
+          <mat-form-field id="form3" appearance="legacy">
+            <mat-label class="label">Contracts Path</mat-label>
+            <input matInput [(ngModel)]="contractsPath">
+          </mat-form-field>
+          <mat-form-field id="form4" appearance="legacy">
+            <mat-label class="label">Test Path</mat-label>
+            <input matInput [(ngModel)]="testPath">
+          </mat-form-field>
+          <mat-form-field id="form5" appearance="legacy">
+            <mat-label class="label">Path to save the compiled file</mat-label>
+            <input matInput [(ngModel)]="compiledPath">
+          </mat-form-field>
+          <div>
+            <button mat-raised-button color="primary" id="ignoreContracts" (click)="showContracts()">Select contracts to
+              ignore
+            </button>
+          </div>
+
+          <div id="slider">
+            <form [formGroup]="form">
+              <div formArrayName="orders" *ngFor="let order of ordersFormArray.controls; let i = index">
+                <mat-checkbox [formControlName]="i" color="primary">
+                  {{visualCheckBox[i].name}}
+                </mat-checkbox>
+              </div>
+            </form>
+          </div>
+
+
+          <mat-checkbox id="form7" color="primary" [(ngModel)]="ganacheActived">Ganache</mat-checkbox>
+          <mat-checkbox id="form10" color="primary" [(ngModel)]="optimizedActived">Optimizer</mat-checkbox>
+          <mat-checkbox id="form8" color="primary" [(ngModel)]="tceActived">TCE</mat-checkbox>
+          <mat-checkbox id="form9" color="primary" [(ngModel)]="personalTestActived">Personal testing script</mat-checkbox>
+
+          <button mat-raised-button color="primary" class="SaveSetting" (click)="saveSetting()">Save settings</button>
+          <mat-checkbox id="form11" color="primary" [(ngModel)]="regressionTestingActived">Regression Testing
+          </mat-checkbox>
+          <mat-form-field id="form12" appearance="legacy">
+            <mat-label class="label">Set TimeOut in seconds</mat-label>
+            <input matInput [(ngModel)]="setTimeOutInSec">
+          </mat-form-field>
+        </div>
+
+
+      </mat-tab>
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>toll</mat-icon>
+        </ng-template>
+
+
+        <div class="blur"></div>
+        <div id="GeneralOperators">
+          <p id="general">
+            <button mat-raised-button color="primary" (click)="allGeneral()">ALL General Operators</button>
+          </p>
+
+
+          <div id="groupOfGeneralOperator1">
+            <mat-slide-toggle color="primary" color="primary" [(ngModel)]="ACM">ACM</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="AOR">AOR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="BCRD">BCRD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="BLR">BLR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="BOR">BOR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="CBD">CBD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="CSC">CSC</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="ECS">ECS</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="ER">ER</mat-slide-toggle>
+          </div>
+
+          <div id="groupOfGeneralOperator2">
+            <mat-slide-toggle color="primary" [(ngModel)]="HLR">HLR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="ICM">ICM</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="ILR">ILR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="LSC">LSC</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="OLFD">OLFD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="ORFD">ORFD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="SKD">SKD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="SKI">SKI</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="SLR">SLR</mat-slide-toggle>
+          </div>
+          <div id="groupOfGeneralOperator3">
+            <mat-slide-toggle color="primary" [(ngModel)]="UORD">UORD</mat-slide-toggle>
+          </div>
+          <div id="SolidityOperators">
+            <p id="sol">
+              <button mat-raised-button color="primary" (click)="allSolidity()">ALL Solidity Operators</button>
+            </p>
+            <mat-slide-toggle color="primary" [(ngModel)]="AVR">AVR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="CCD">CCD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="DLR">DLR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="DOD">DOD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="EED">EDD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="EHC">EHC</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="ETR">ETR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="FVR">FVR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="GVR">GVR</mat-slide-toggle>
+          </div>
+          <div id="SolidityOperators2">
+            <mat-slide-toggle color="primary" [(ngModel)]="MCR">MCR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="MOC">MOC</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="MOD">MOD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="MOI">MOI</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="MOR">MOR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="OMD">OMD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="PKD">PKD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="RSD">RSD</mat-slide-toggle>
+          </div>
+          <div id="SolidityOperators3">
+            <mat-slide-toggle color="primary" [(ngModel)]="RVS">RVS</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="SCEC">SCEC</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="SFI">SFI</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="SFD">SFD</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="SFR">SFR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="TOR">TOR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="VUR">VUR</mat-slide-toggle>
+            <br>
+            <br>
+            <mat-slide-toggle color="primary" [(ngModel)]="VVR">VVR</mat-slide-toggle>
+          </div>
+          <button mat-raised-button color="primary" class="SaveSetting" (click)="saveOperatorSettings()">Save
+            operators
+          </button>
+        </div>
+
+
+      </mat-tab>
+    </mat-tab-group>
+
+
+  </div>
+</div>
+</body>

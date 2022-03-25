@@ -1,0 +1,71 @@
+<div class="container">
+
+<p>
+  <mat-toolbar id="toolbar">
+    <span id="sumo">SuMo</span>
+    <a id="home" href="../">BACK TO HOME</a>
+  </mat-toolbar>
+</p>
+<div>
+  <mat-tab-group dynamicHeight mat-align-tabs="start">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>receipt</mat-icon>
+      </ng-template>
+      <div class="terminal">
+        <div class="blur"></div>
+        <div id="Report">
+          <pre>{{this.valueReport}}</pre>
+        </div>
+      </div>
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>note_add</mat-icon>
+      </ng-template>
+      <div class="terminal">
+        <div class="blur"></div>
+        <div id="Regression">
+          <pre>{{this.valueRegression}}</pre>
+        </div>
+      </div>
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>line_weight</mat-icon>
+      </ng-template>
+      <div class="blur"></div>
+      <div id="csvTable" >
+        <table class="sjs-table">
+          <tbody>
+          <tr *ngFor="let row of data">
+            <td *ngFor="let val of row">
+              {{val}}
+            </td>
+          </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>subject</mat-icon>
+      </ng-template>
+      <div class="blur"></div>
+      <div id="operatorTable" >
+        <table class="sjs-table">
+          <tbody>
+          <tr *ngFor="let row of data2">
+            <td *ngFor="let val of row">
+              {{val}}
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+</div>
+</div>

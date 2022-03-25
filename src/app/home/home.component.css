@@ -1,0 +1,461 @@
+html, body {
+  background-color: black;
+  background-image: url("../../SuMo-logos/SuMo-logos_white.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+#tab {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  background-color: rgba(0, 0, 0, 0.35);
+
+}
+
+#divdi {
+  background-color: transparent;
+  position: fixed;
+  top: 20%;
+  left: 7%;
+  bottom: 7%;
+  right: 7%;
+
+}
+
+.blur {
+  background-color: black;
+  background-image: url("../../SuMo-logos/SuMo-logos_white.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: blur(15px);
+  position: fixed;
+  left: 3%;
+  right: 3%;
+  top: 20%;
+  bottom: 10%;
+  object-fit: fill;
+
+}
+
+#toolbar {
+  background-color: black;
+  background-image: url("../../SuMo-logos/SuMo-logos_withoutName_white.png");
+  background-repeat: no-repeat;
+  height: 60px;
+  min-width: 1280px;
+}
+
+/* Home's CSS */
+
+.commands-container {
+  width: 1920px;
+  height: 1080px;
+  position: fixed;
+  background-color: transparent;
+}
+
+.commands-sidenav-content {
+  top: 15%;
+  position: fixed;
+
+}
+
+.commands-sidenav {
+  padding: 70px;
+  background-color: transparent;
+  height: 60%;
+  border: 0;
+}
+
+
+#home {
+  color: white;
+  position: absolute;
+  left: 45%;
+
+}
+
+#sumo {
+  color: white;
+  position: fixed;
+  left: 94%;
+
+}
+.commandContainer{
+  width: 28%;
+}
+#test {
+  width: 20%;
+  position: fixed;
+  top: 29%;
+  left: 1%;
+}
+
+#preflight {
+  width: 20%;
+  position: fixed;
+  top: 36%;
+  left: 1%;
+}
+
+#mutate {
+  width: 20%;
+  position: fixed;
+  top: 43%;
+  left: 1%;
+}
+
+#clean {
+  width: 20%;
+  position: fixed;
+  top: 50%;
+  left: 1%;
+}
+#deleteResume {
+  width: 20%;
+  position: fixed;
+  top: 64%;
+  left: 1%;
+}
+#restore {
+  width: 20%;
+  position: fixed;
+  top: 57%;
+  left: 1%;
+}
+
+#report {
+  position: fixed;
+  top: 18%;
+  left: 45%;
+}
+
+#reportRegression {
+  position: fixed;
+  top: 18%;
+  left: 60%;
+}
+#reportCSV {
+  position: fixed;
+  top: 18%;
+  left: 75%;
+}
+table {
+  border-collapse: collapse;
+  border-radius: 5px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  font-family: "Quicksand", sans-serif;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+th {
+  background: #009578;
+  color: #ffffff;
+  text-align: left;
+}
+
+th, td {
+  padding: 10px 20px;
+}
+
+tr:nth-child(even) {
+  background: #eeeeee;
+}
+
+/*Home terminal's CSS*/
+#clipboard-terminal-textarea {
+  color: #c4c4c4;
+  background-color: rgb(33, 33, 33);
+}
+
+.terminal pre {
+  font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+  color: white;
+  padding: 0 1rem 1rem;
+  margin: 0;
+}
+
+.terminal {
+  left: 10%;
+  top: 25%;
+  right: 10%;
+  bottom: 10%;
+  position: fixed;
+  border-radius: 6px;
+  padding-top: 45px;
+  margin-top: 8px;
+  overflow: auto;
+  background-color: rgb(43, 43, 43);
+}
+
+.terminal::before {
+  position: absolute;
+  content: "\2022 \2022 \2022";
+  top: 0;
+  left: 0;
+  height: 4px;
+  background: rgb(58, 58, 58);
+  color: #c2c3c4;
+  width: 100%;
+  font-size: 2rem;
+  line-height: 0;
+  padding: 14px 0;
+  text-indent: 4px;
+}
+
+
+/*Setting's CSS */
+
+#group {
+
+  position: center;
+}
+
+#ignoreContracts {
+  left: 50%;
+  bottom: 72%;
+  position: fixed;
+
+}
+
+.label {
+  color: white;
+}
+
+#dynamicCheckBox {
+  position: relative;
+}
+
+#slider {
+  top: 25%;
+  right: 10%;
+  width: 20%;
+  background-color: transparent;
+  position: fixed;
+  bottom: 20%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#form1 {
+  height: 55px;
+  width: 450px;
+  bottom: 70%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 5%;
+
+}
+
+#form2 {
+  height: 55px;
+  width: 450px;
+  bottom: 60%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 5%;
+}
+
+#container {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.11);
+  position: fixed;
+  left: 3%;
+  right: 3%;
+  top: 20%;
+  bottom: 20%;
+}
+
+#form3 {
+  height: 55px;
+  width: 450px;
+  bottom: 50%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 5%;
+}
+
+#form4 {
+  height: 55px;
+  width: 450px;
+  bottom: 40%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 5%;
+}
+
+#form5 {
+  height: 55px;
+  width: 450px;
+  bottom: 30%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 5%;
+}
+
+#form6 {
+  height: 55px;
+  width: 450px;
+  bottom: 70%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 50%;
+}
+
+#form7 {
+  height: 55px;
+  width: 200px;
+  bottom: 60%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 50%;
+}
+
+#form8 {
+  height: 55px;
+  width: 200px;
+  bottom: 50%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 50%;
+}
+
+#form9 {
+  height: 55px;
+  width: 200px;
+  bottom: 40%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 50%;
+}
+
+#form10 {
+  height: 55px;
+  width: 200px;
+  bottom: 30%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 50%;
+}
+
+#form11 {
+  height: 55px;
+  width: 200px;
+  bottom: 20%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 50%;
+}
+#form12 {
+  height: 55px;
+  width: 200px;
+  bottom: 20%;
+  position: fixed;
+  background-color: transparent;
+  border-radius: 12px;
+  left: 5%;
+}
+
+.SaveSetting {
+  position: fixed;
+  top: 85%;
+  left: 35%;
+  right: 35%;
+  width: 30%;
+}
+
+/*Operator's CSS*/
+
+
+#GeneralOperators {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.11);
+  position: fixed;
+  left: 3%;
+  right: 3%;
+  top: 20%;
+  bottom: 10%;
+  object-fit: fill;
+
+}
+
+#general {
+  position: fixed;
+  top: 22%;
+  left: 15%;
+
+}
+
+#groupOfGeneralOperator1 {
+  background-color: transparent;
+  position: fixed;
+  top: 30%;
+  bottom: 20%;
+  left: 9%;
+}
+
+#groupOfGeneralOperator2 {
+  background-color: transparent;
+  top: 30%;
+  bottom: 20%;
+  position: fixed;
+  left: 24%;
+}
+
+#groupOfGeneralOperator3 {
+  background-color: transparent;
+  top: 30%;
+  bottom: 20%;
+  position: fixed;
+  left: 39%;
+}
+
+#sol {
+  position: fixed;
+  top: 22%;
+  right: 22%;
+}
+
+#SolidityOperators {
+  background-color: transparent;
+  position: fixed;
+  right: 39%;
+  top: 30%;
+  bottom: 20%;
+}
+
+#SolidityOperators2 {
+  background-color: transparent;
+  position: fixed;
+  right: 24%;
+  top: 30%;
+  bottom: 20%;
+}
+
+#SolidityOperators3 {
+  background-color: transparent;
+  position: fixed;
+  right: 9%;
+  top: 30%;
+  bottom: 20%;
+}
+
+
+
