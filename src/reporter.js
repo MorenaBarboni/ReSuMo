@@ -275,91 +275,104 @@ Reporter.prototype.setupMutationsReport = function() {
 };
 
 //Extracts test information from mochawesome reports and adds them to the mutation object
-Reporter.prototype.extractMochawesomeReportInfo = function(mutation) {
+Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
 
   let hash = mutation.hash();
 
   //Rename report file
-  let pathJson = sumoDir + "/mochawesome-report/mochawesome.json";
-  let pathHtml = sumoDir + "/mochawesome-report/mochawesome.html";
+  let pathJson = sumoDir + '/mochawesome-report/mochawesome.json';
+  let pathHtml = sumoDir + '/mochawesome-report/mochawesome.html';
 
-  if (mutation.status !== "timedout") {
+  if (mutation.status !== 'timedout') {
+
     if (fs.existsSync(pathJson)) {
-      fs.renameSync(pathJson, sumoDir + "/mochawesome-report/mochawesome-" + hash + ".json", function(err) {
-        if (err)
-          console.log("ERROR: " + err);
+      fs.renameSync(pathJson, sumoDir + '/mochawesome-report/mochawesome-' + hash + '.json', function (err) {
+        if (err) console.log('ERROR: ' + err);
       });
 
       if (fs.existsSync(pathHtml)) {
-        fs.renameSync(pathHtml, sumoDir + "/mochawesome-report/mochawesome-" + hash + ".html", function(err) {
-          if (err)
-            console.log("ERROR: " + err);
+        fs.renameSync(pathHtml, sumoDir + '/mochawesome-report/mochawesome-' + hash + '.html', function (err) {
+          if (err) console.log('ERROR: ' + err);          
         });
       }
 
       //Extract test info
-      let path = sumoDir + "/mochawesome-report/mochawesome-" + hash + ".json";
+      let path = sumoDir + '/mochawesome-report/mochawesome-' + hash + '.json'
       let rawdata = fs.readFileSync(path);
       let json = JSON.parse(rawdata);
-      let testSuites = json.results[0].suites;
-      let killers = []; //Test suite name, isKiller, test error.
-      let nonKillers = []; //Test suite name, isKiller, test error.
+      //Sometimes test file == test suite, in other cases a test file can contain more test suites
+      let testFiles = json.results[0].suites; 
+      let killers = []; //Test File name [Test Suite name, test case name, status, error]
+      let nonKillers = [];  //Test File name [Test Suite name, test case name, status, error]
 
-      for (var i = 0; i < testSuites.length; i++) {
-        let testFileInfo = [];
-        testFileInfo.push(testSuites[i].title);
+      for (var i = 0; i < testFiles.length; i++) {
+        // test suites contained in the current test file
+        let testSuites; 
+        let testFileInfo = []
+        testFileInfo.push(testFiles[i].file)
+        
+        //If the test file contains more test suites
+        if(testFiles[i].suites){
+          testSuites = testFiles[i].suites
+        }else{
+         testSuites = testFiles[i]
+       }
 
-        for (var j = 0; j < testSuites[i].tests.length; j++) {
-          let testCaseInfo = [];
-          let test = testSuites[i].tests[j];
-          testCaseInfo.push(test.title);
-          testCaseInfo.push(test.state);
+       //Check test methods in each test suite
+        for (var j = 0; j < testSuites.tests.length; j++) {
+          let testCaseInfo = []
+          let test = testSuites.tests[j]
+          testCaseInfo.push(testSuites.title)
+          testCaseInfo.push(test.title)
+          testCaseInfo.push(test.state)
 
-          if (test.state === "failed") {
+          if (test.state === 'failed') {
             var errorMessage = test.err.message;
             if (errorMessage.includes("AssertionError"))
-              testCaseInfo.push("AssertionError");
-            if (errorMessage.includes("Error"))
-              testCaseInfo.push("Error");
-            if (errorMessage.includes("out of gas"))
-              testCaseInfo.push("Out of gas");
+              testCaseInfo.push("AssertionError")
+            else if (errorMessage.includes("out of gas"))
+              testCaseInfo.push("Out of gas")
+            else if (errorMessage.includes("revert"))
+              testCaseInfo.push("Out of gas")
+            else if (errorMessage.includes("Error"))
+              testCaseInfo.push("Error")
           } else {
-            testCaseInfo.push("");
+            testCaseInfo.push("")
           }
           testFileInfo.push(testCaseInfo);
         }
-
-        if (testSuites[i].failures.length > 0) {
-          killers.push(testFileInfo);
+        
+        if (testFiles[i].failures.length > 0) {
+          killers.push(testFileInfo)
         } else {
-          nonKillers.push(testFileInfo);
+          nonKillers.push(testFileInfo)
         }
       }
-      mutation.killers = killers;
-      mutation.nonKillers = nonKillers;
+      mutation.killers = killers
+      mutation.nonKillers = nonKillers
 
-      mutationObj = {};
-      mutationObj.hash = mutation.hash();
-      mutationObj.operator = mutation.operator;
-      mutationObj.status = mutation.status;
-      mutationObj.file = mutation.file;
-      mutationObj.killers = mutation.killers;
-      mutationObj.nonKillers = mutation.nonKillers;
-      this.mutations.push(mutationObj);
+      mutationObj = new Object()
+      mutationObj.hash = mutation.hash()
+      mutationObj.operator = mutation.operator
+      mutationObj.status = mutation.status
+      mutationObj.file = mutation.file
+      mutationObj.killers = mutation.killers
+      mutationObj.nonKillers = mutation.nonKillers
+      this.mutations.push(mutationObj)
     } else {
-      console.log("ERROR: Could not access " + sumoDir + "/mochawesome-report/mochawesome-" + hash + ".json");
+      console.log('ERROR: Could not access ' +sumoDir + '/mochawesome-report/mochawesome-' + hash + '.json' );
     }
   } else {
-    mutationObj = {};
-    mutationObj.hash = mutation.hash();
-    mutationObj.operator = mutation.operator;
-    mutationObj.status = mutation.status;
-    mutationObj.file = mutation.file;
-    mutationObj.killers = [];
-    mutationObj.nonKillers = [];
+    mutationObj = new Object()
+    mutationObj.hash = mutation.hash()
+    mutationObj.operator = mutation.operator
+    mutationObj.status = mutation.status
+    mutationObj.file = mutation.file
+    mutationObj.killers = []
+    mutationObj.nonKillers = []
   }
 
-};
+}
 
 //Saves the mutation to .sumo/mutations.json
 Reporter.prototype.saveMochawesomeReportInfo = function() {
