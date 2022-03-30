@@ -140,10 +140,7 @@ function loadTests() {
               artifacts.push("GnosisSafe.sol");
               artifacts.push("GnosisSafeProxyFactory.sol");
             }
-
-            console.log("Which are contracts: " +artifacts)
-
-          }
+         }
         }
       }
       );
