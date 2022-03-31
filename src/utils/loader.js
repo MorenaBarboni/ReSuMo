@@ -140,6 +140,9 @@ function loadTests() {
               artifacts.push("GnosisSafe.sol");
               artifacts.push("GnosisSafeProxyFactory.sol");
             }
+            if (importedElements.includes("migrationContract")) {
+              artifacts.push("Migrate_1_3_0_to_1_2_0.sol");
+            }
          }
         }
       }
