@@ -7,7 +7,6 @@ var excel = require('excel4node');
 const liveDir = config.liveDir
 const killedDir = config.killedDir
 const path = require('path');
-const {green} = require("truffle/build/432.bundled");
 function Reporter() {
   this.mutations = [];
   this.survived = [];
