@@ -95,7 +95,7 @@ Reporter.prototype.preflightToExcel = function (mutations) {
   var workbook = new excel.Workbook();
   var worksheet = workbook.addWorksheet('Mutations');
 
-  var headerStyle = workbook.createStyle({
+   var headerStyle = workbook.createStyle({
     font: {
       color: '#000000',
       size: 12,
@@ -111,28 +111,28 @@ Reporter.prototype.preflightToExcel = function (mutations) {
 
   // Set Headers
   worksheet.cell(1, 1)
-    .string("Operator")
-    .style(headerStyle);
+  .string("Operator")
+  .style(headerStyle);
 
   worksheet.cell(1, 2)
-    .string("Hash")
-    .style(headerStyle);
+  .string("Hash")
+  .style(headerStyle);
 
   worksheet.cell(1, 3)
-    .string("File")
-    .style(headerStyle);
+  .string("File")
+  .style(headerStyle);
 
   worksheet.cell(1, 4)
-    .string("Start Index")
-    .style(headerStyle);
+  .string("Start Index")
+  .style(headerStyle);
 
   worksheet.cell(1, 5)
-    .string("End Index")
-    .style(headerStyle); worksheet.cell(1, 2)
+  .string("End Index")
+  .style(headerStyle); worksheet.cell(1, 2)
 
   worksheet.cell(1, 6)
-    .string("Replacement")
-    .style(headerStyle); worksheet.cell(1, 2)
+  .string("Replacement")
+  .style(headerStyle); worksheet.cell(1, 2)
 
   var style = workbook.createStyle({
     font: {
@@ -142,34 +142,34 @@ Reporter.prototype.preflightToExcel = function (mutations) {
   });
 
   //Retrieve list of mutations
-  for(var i = 0; i < mutations.length; i ++){
+   for(var i = 0; i < mutations.length; i ++){
 
-    worksheet.cell(i+2, 1)
+      worksheet.cell(i+2, 1)
       .string(mutations[i].operator)
       .style(style);
 
-    worksheet.cell(i+2, 2)
+      worksheet.cell(i+2, 2)
       .string(mutations[i].hash())
       .style(style);
 
-    worksheet.cell(i+2, 3)
+      worksheet.cell(i+2, 3)
       .string(mutations[i].file)
       .style(style);
 
-    worksheet.cell(i+2, 4)
+      worksheet.cell(i+2, 4)
       .number(mutations[i].start)
       .style(style);
 
-    worksheet.cell(i+2, 5)
+      worksheet.cell(i+2, 5)
       .number(mutations[i].end)
       .style(style);
 
-    worksheet.cell(i+2, 6)
+      worksheet.cell(i+2, 6)
       .string(mutations[i].replace)
       .style(style);
 
     workbook.write('./.sumo/GeneratedMutations.xlsx');
-  }
+ }
 
 }
 
@@ -388,3 +388,4 @@ Reporter.prototype.getMutants = function(){
 
 
 module.exports = Reporter
+

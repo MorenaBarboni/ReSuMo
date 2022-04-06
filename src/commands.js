@@ -254,9 +254,10 @@ function test() {
         changedTest = resume.getChangedTest();
         originalTest = resume.getOriginalTest();
         for (const singleTest of originalTest) {
-          if (!changedTest.includes(singleTest.path)) {
+         if (!changedTest.includes(singleTest.path)&&!(path.dirname(singleTest.path)===testDir+'/utils'&&!(path.dirname(singleTest.path)===testDir+'/json'))) {
             fs.unlinkSync(singleTest.path);
           }
+          
         }
       } else {
         changedContracts = files;
@@ -264,8 +265,10 @@ function test() {
       spawnCompile();
       var originalBytecodeMap = new Map();
       var check = false;
+      var contractsToMutate=[]
       for (const file of changedContracts) {
-        if (file !== config.ignore)
+        //if (file !== config.ignore){
+        
           for (const contract of config.ignore) {
             if (!contract.includes(parse(file).name)) {
               check = true;
@@ -274,22 +277,24 @@ function test() {
               break;
             }
           }
-
+      //  }
         if (check) {
-          console.log("Dir")
-          console.log(parse(file).dir)
           exploreDirectories(config.compiledDir)
           compiledContracts.map(singleContract=>{
             if(parse(singleContract).name===parse(file).name){
             originalBytecodeMap.set(parse(file).name, saveBytecodeSync(singleContract))
+            if(!contractsToMutate.includes(file)){
+               contractsToMutate.push(file)
+            }
             }})
         }
+        check=false
       }
         console.log("Contracts to mutate and Test: " + originalBytecodeMap.size);
         instrumenter.instrumentConfig();
         reporter.setupMutationsReport();
         //Generate mutations
-        const mutations = generateAllMutations(files);
+        const mutations = generateAllMutations(contractsToMutate);
         var startTime = Date.now();
 
         //Compile and test each mutant
@@ -655,6 +660,7 @@ function tce(mutation, map, file, originalBytecodeMap) {
       mutation.bytecode=saveBytecodeSync(data);
     }
   })
+
   if (originalBytecodeMap.get(file) === mutation.bytecode) {
     mutation.status = "equivalent";
     console.log(chalk.magenta("EQUIVALENT"));
