@@ -42,6 +42,7 @@ function compare(oldReport, newReport, oldTestName, newTestName) {
       else if ((!(newHashArray.includes(oldReportElement.hash))) || (!(oldHashArray.includes(key)))) {
 
         if ((!(newOperators.includes(oldReportElement.operator)))||(!(newContracts.includes(oldReportElement.contract)))) {
+          console.log(newContracts)
           var tempTest = [];
           for (let test of allTestName) {
             var indexOf2 = allTestName.indexOf(test);

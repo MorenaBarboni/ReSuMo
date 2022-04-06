@@ -254,10 +254,9 @@ function test() {
         changedTest = resume.getChangedTest();
         originalTest = resume.getOriginalTest();
         for (const singleTest of originalTest) {
-         if (!changedTest.includes(singleTest.path)&&!(path.dirname(singleTest.path)===testDir+'/utils'&&!(path.dirname(singleTest.path)===testDir+'/json'))) {
+          if (!changedTest.includes(singleTest.path)) {
             fs.unlinkSync(singleTest.path);
           }
-          
         }
       } else {
         changedContracts = files;
@@ -265,10 +264,8 @@ function test() {
       spawnCompile();
       var originalBytecodeMap = new Map();
       var check = false;
-      var contractsToMutate=[]
       for (const file of changedContracts) {
-        //if (file !== config.ignore){
-        
+        if (file !== config.ignore)
           for (const contract of config.ignore) {
             if (!contract.includes(parse(file).name)) {
               check = true;
@@ -277,24 +274,22 @@ function test() {
               break;
             }
           }
-      //  }
+
         if (check) {
+          console.log("Dir")
+          console.log(parse(file).dir)
           exploreDirectories(config.compiledDir)
           compiledContracts.map(singleContract=>{
             if(parse(singleContract).name===parse(file).name){
             originalBytecodeMap.set(parse(file).name, saveBytecodeSync(singleContract))
-            if(!contractsToMutate.includes(file)){
-               contractsToMutate.push(file)
-            }
             }})
         }
-        check=false
       }
         console.log("Contracts to mutate and Test: " + originalBytecodeMap.size);
         instrumenter.instrumentConfig();
         reporter.setupMutationsReport();
         //Generate mutations
-        const mutations = generateAllMutations(contractsToMutate);
+        const mutations = generateAllMutations(files);
         var startTime = Date.now();
 
         //Compile and test each mutant
@@ -660,12 +655,18 @@ function tce(mutation, map, file, originalBytecodeMap) {
       mutation.bytecode=saveBytecodeSync(data);
     }
   })
-
   if (originalBytecodeMap.get(file) === mutation.bytecode) {
     mutation.status = "equivalent";
     console.log(chalk.magenta("EQUIVALENT"));
   } else if (map.size !== 0) {
     for (const key of map.keys()) {
+      console.log('\n')
+      console.log('Map key ')
+      console.log(map.get(key))
+
+      console.log('\n\n\nmutation.bytecode')
+      console.log(mutation.bytecode)
+      console.log('\n')
       if (map.get(key) === mutation.bytecode) {
         mutation.status = "redundant";
         console.log(chalk.magenta("REDUNDANT"));
@@ -691,12 +692,18 @@ function tce(mutation, map, file, originalBytecodeMap) {
     });
 }
 
-
+//function to generate an excel file with test result details, taken from mocha-report dir
+function generateTestExcel(){
+  if(fs.existsSync(sumoDir+'/mochawesome-report'))
+    reporter.saveTestData();
+  else
+    console.log('The mochawesome-report dir does not exist!')
+}
 
 module.exports = {
   test: test, preflight, preflight, mutate: preflightAndSave, diff: diff, list: list,
   enable: enableOperator, disable: disableOperator, clean: clean, preTest: preTest, restore: restore,
-  delete:deleteResumeFromCLI, deleteResumeFromGUI:deleteResumeFromGUI
+  delete:deleteResumeFromCLI, deleteResumeFromGUI:deleteResumeFromGUI, generateExcel:generateTestExcel
 };
 
 
