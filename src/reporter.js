@@ -319,7 +319,7 @@ Reporter.prototype.saveTestData=function () {
     font: {
       color: "#000000",
       size: 12,
-      bold:true
+      bold:false
     },
     fill: {
       type: "pattern",

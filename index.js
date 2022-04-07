@@ -54,5 +54,8 @@ yargs
   .command('restore', 'restore SUT files', (argv) => {
     commands.restore()
   })
+  .command('generateExcel','generate xlsx with test results info', (argv)=>{
+    commands.generateExcel()
+  })
   .help()
   .argv

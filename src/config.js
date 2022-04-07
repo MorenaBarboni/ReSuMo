@@ -1,5 +1,5 @@
 module.exports ={
- absoluteSumoDir: '/home/francesco/Documenti/ReSuMo/.sumo',
+ absoluteSumoDir: '/home/francesco/Documenti/GitHub/ReSuMo/.sumo',
  sumoDir: '.sumo',
 baselineDir: '.sumo/baseline',
  killedDir: '.sumo/killed',
