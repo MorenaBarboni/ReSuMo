@@ -660,6 +660,13 @@ function tce(mutation, map, file, originalBytecodeMap) {
     console.log(chalk.magenta("EQUIVALENT"));
   } else if (map.size !== 0) {
     for (const key of map.keys()) {
+      console.log('\n')
+      console.log('Map key ')
+      console.log(map.get(key))
+
+      console.log('\n\n\nmutation.bytecode')
+      console.log(mutation.bytecode)
+      console.log('\n')
       if (map.get(key) === mutation.bytecode) {
         mutation.status = "redundant";
         console.log(chalk.magenta("REDUNDANT"));
@@ -685,12 +692,18 @@ function tce(mutation, map, file, originalBytecodeMap) {
     });
 }
 
-
+//function to generate an excel file with test result details, taken from mocha-report dir
+function generateTestExcel(){
+  if(fs.existsSync(sumoDir+'/mochawesome-report'))
+    reporter.saveTestData();
+  else
+    console.log('The mochawesome-report dir does not exist!')
+}
 
 module.exports = {
   test: test, preflight, preflight, mutate: preflightAndSave, diff: diff, list: list,
   enable: enableOperator, disable: disableOperator, clean: clean, preTest: preTest, restore: restore,
-  delete:deleteResumeFromCLI, deleteResumeFromGUI:deleteResumeFromGUI
+  delete:deleteResumeFromCLI, deleteResumeFromGUI:deleteResumeFromGUI, generateExcel:generateTestExcel
 };
 
 

@@ -1,11 +1,13 @@
 const chalk = require('chalk')
 const fs = require('fs')
+const { parse } = require("path");
 const { sumoDir } = require('./config')
 const config = require('./config')
 var excel = require('excel4node');
 const liveDir = config.liveDir
 const killedDir = config.killedDir
-
+const path = require('path');
+const {green} = require("truffle/build/432.bundled");
 function Reporter() {
   this.mutations = [];
   this.survived = [];
@@ -90,12 +92,12 @@ Reporter.prototype.preflightSummary = function(mutations) {
   }
 };
 
-//Save mutations info to excel file 
+//Save mutations info to excel file
 Reporter.prototype.preflightToExcel = function (mutations) {
   var workbook = new excel.Workbook();
   var worksheet = workbook.addWorksheet('Mutations');
 
-   var headerStyle = workbook.createStyle({
+  var headerStyle = workbook.createStyle({
     font: {
       color: '#000000',
       size: 12,
@@ -111,28 +113,28 @@ Reporter.prototype.preflightToExcel = function (mutations) {
 
   // Set Headers
   worksheet.cell(1, 1)
-  .string("Operator")
-  .style(headerStyle);
+    .string("Operator")
+    .style(headerStyle);
 
   worksheet.cell(1, 2)
-  .string("Hash")
-  .style(headerStyle);
+    .string("Hash")
+    .style(headerStyle);
 
   worksheet.cell(1, 3)
-  .string("File")
-  .style(headerStyle);
+    .string("File")
+    .style(headerStyle);
 
   worksheet.cell(1, 4)
-  .string("Start Index")
-  .style(headerStyle);
+    .string("Start Index")
+    .style(headerStyle);
 
   worksheet.cell(1, 5)
-  .string("End Index")
-  .style(headerStyle); worksheet.cell(1, 2)
+    .string("End Index")
+    .style(headerStyle); worksheet.cell(1, 2)
 
   worksheet.cell(1, 6)
-  .string("Replacement")
-  .style(headerStyle); worksheet.cell(1, 2)
+    .string("Replacement")
+    .style(headerStyle); worksheet.cell(1, 2)
 
   var style = workbook.createStyle({
     font: {
@@ -142,39 +144,39 @@ Reporter.prototype.preflightToExcel = function (mutations) {
   });
 
   //Retrieve list of mutations
-   for(var i = 0; i < mutations.length; i ++){
-           
-      worksheet.cell(i+2, 1)
+  for(var i = 0; i < mutations.length; i ++){
+
+    worksheet.cell(i+2, 1)
       .string(mutations[i].operator)
       .style(style);
 
-      worksheet.cell(i+2, 2)
+    worksheet.cell(i+2, 2)
       .string(mutations[i].hash())
       .style(style);
 
-      worksheet.cell(i+2, 3)
+    worksheet.cell(i+2, 3)
       .string(mutations[i].file)
       .style(style);
-      
-      worksheet.cell(i+2, 4)
+
+    worksheet.cell(i+2, 4)
       .number(mutations[i].start)
       .style(style);
-      
-      worksheet.cell(i+2, 5)
+
+    worksheet.cell(i+2, 5)
       .number(mutations[i].end)
       .style(style);
 
-      worksheet.cell(i+2, 6)
+    worksheet.cell(i+2, 6)
       .string(mutations[i].replace)
       .style(style);
-  
+
     workbook.write('./.sumo/GeneratedMutations.xlsx');
- }
+  }
 
 }
 
 
-//Prints test summary to console 
+//Prints test summary to console
 Reporter.prototype.testSummary = function () {
   console.log('\n--- Summary ---')
   console.log(
@@ -274,6 +276,202 @@ Reporter.prototype.setupMutationsReport = function() {
   });
 };
 
+Reporter.prototype.saveTestData=function () {
+  var workbook = new excel.Workbook
+  var worksheet = workbook.addWorksheet("Sheet 1");
+  var headerStyle = workbook.createStyle({
+    font: {
+      color: "#000000",
+      size: 12,
+      bold: false
+    },
+    fill: {
+      type: "pattern",
+      patternType: "solid",
+      bgColor: "#e9e2d2",
+      fgColor: "#e9e2d2"
+    }
+  });
+  var style = workbook.createStyle({
+    font: {
+      color: "#000000",
+      size: 12
+    }});
+  var stylePassed = workbook.createStyle({
+    font: {
+      color: "#000000",
+      size: 12
+    },
+    fill: {
+      type: "pattern",
+      patternType: "solid",
+      bgColor:"#67cc5d",
+      fgColor: "#67cc5d"
+    },
+    border:{
+      top:{style:'thin'},
+      bottom:{style:'thin'},
+      left:{style:'thin'},
+      right:{style:'thin'},
+    }
+  });
+  var styleFailed = workbook.createStyle({
+    font: {
+      color: "#000000",
+      size: 12,
+      bold:false
+    },
+    fill: {
+      type: "pattern",
+      patternType: "solid",
+      bgColor:"#e73748",
+      fgColor: "#e73748"
+    },
+    border:{
+      top:{style:'thin'},
+      bottom:{style:'thin'},
+      left:{style:'thin'},
+      right:{style:'thin'},
+    }
+  });
+  var styleNull = workbook.createStyle({
+    font: {
+      color: "#000000",
+      size: 12,
+      bold:true
+    },
+    fill: {
+      type: "pattern",
+      patternType: "solid",
+      bgColor:"#8d45ad",
+      fgColor: "#8d45ad"
+    },
+    border:{
+      top:{style:'thin'},
+      bottom:{style:'thin'},
+      left:{style:'thin'},
+      right:{style:'thin'},
+    }
+  });
+  worksheet.cell(4, 1)
+    .string("Hash")
+    .style(headerStyle);
+  worksheet.cell(4, 2)
+    .string("Operator")
+    .style(headerStyle);
+  worksheet.cell(4, 3)
+    .string("Contract")
+    .style(headerStyle);
+  const mochaDir=sumoDir+'/mochawesome-report/'
+  const mutationsJsonDir=sumoDir+'/mutations.json'
+  const dirPath=path.join(mochaDir)
+  let mochaDirItems= fs.readdirSync(dirPath);
+  var columnCounter=0
+  let counter=5
+  //Structure
+  let item=mochaDirItems[0]
+  let mochaFile = fs.readFileSync(mochaDir + item)
+  let json = JSON.parse(mochaFile)
+  let mochaMutant = json.results[0]
+  for (let i = 0; i < mochaMutant.suites.length; i++) {
+    let suite = mochaMutant.suites[i].suites
+    worksheet.cell(1, columnCounter + 4)
+      .string(mochaMutant.suites[i].file)
+      .style(style)
+    worksheet.cell(2, columnCounter + 4)
+      .string(mochaMutant.suites[i].title)
+      .style(style)
+    if (suite.length===0 ) {
+      for(let j=0;j<mochaMutant.suites[i].tests.length;j++){
+        worksheet.cell(4, columnCounter + 4)
+          .string(mochaMutant.suites[i].tests[j].title)
+          .style(style)
+        columnCounter++
+      }
+    }
+  else {
+    for (let j = 0; j < suite.length; j++) {
+      worksheet.cell(3, columnCounter + 4)
+        .string(suite[j].title)
+        .style(style)
+      let testCase = suite[j].tests
+      for (let k = 0; k < testCase.length; k++) {
+        worksheet.cell(4, columnCounter + 4)
+          .string(testCase[k].title)
+          .style(style)
+        columnCounter++
+      }
+    }
+  }
+  }
+  for(let item of mochaDirItems){
+    var count2=0
+    let hash = parse(item).name
+    hash = hash.substring(12)
+    worksheet.cell(counter, 1)
+      .string(hash)
+      .style(style)
+    let mut = fs.readFileSync(mutationsJsonDir)
+    let json2 = JSON.parse(mut)
+    for (let elem of json2) {
+      if (elem.hash === hash) {
+        let contractName = elem.file.substring(elem.file.lastIndexOf("/") + 1)
+        worksheet.cell(counter, 2)
+          .string(elem.operator)
+          .style(style)
+        worksheet.cell(counter, 3)
+          .string(contractName)
+          .style(style)
+      }}
+    let mochaFile = fs.readFileSync(mochaDir + item)
+    let json = JSON.parse(mochaFile)
+    let mochaMutant = json.results[0]
+    for(let i=0;i<mochaMutant.suites.length;i++) {
+      let testSuite = mochaMutant.suites[i]
+      if (testSuite.suites.length === 0) {
+        for (let j = 0; j<testSuite.tests.length; j++) {
+          if (testSuite.tests[j].state === 'passed') {
+            worksheet.cell(counter, count2 + 4)
+              .string('L')
+              .style(stylePassed)
+          } else if (testSuite.tests[j].state === 'failed') {
+            worksheet.cell(counter, count2 + 4)
+              .string('K')
+              .style(styleFailed)
+          } else
+            worksheet.cell(counter, count2 + 4)
+              .string('-')
+              .style(styleNull)
+          count2++
+        }
+      } else {
+      for (let j = 0; j < testSuite.suites.length; j++) {
+        let testCase = testSuite.suites[j].tests
+        for (let k = 0; k < testCase.length; k++) {
+          if (testCase[k].state === 'passed') {
+            worksheet.cell(counter, count2 + 4)
+              .string('L')
+              .style(stylePassed)
+          } else if (testCase[k].state === 'failed') {
+            worksheet.cell(counter, count2 + 4)
+              .string('K')
+              .style(styleFailed)
+          } else
+            worksheet.cell(counter, count2 + 4)
+              .string('-')
+              .style(styleNull)
+          count2++
+        }
+      }
+      }
+    }
+    counter++
+  }
+  workbook.write("./.sumo/testData.xlsx");
+}
+
+
+
 //Extracts test information from mochawesome reports and adds them to the mutation object
 Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
 
@@ -292,7 +490,7 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
 
       if (fs.existsSync(pathHtml)) {
         fs.renameSync(pathHtml, sumoDir + '/mochawesome-report/mochawesome-' + hash + '.html', function (err) {
-          if (err) console.log('ERROR: ' + err);          
+          if (err) console.log('ERROR: ' + err);
         });
       }
 
@@ -300,54 +498,38 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
       let path = sumoDir + '/mochawesome-report/mochawesome-' + hash + '.json'
       let rawdata = fs.readFileSync(path);
       let json = JSON.parse(rawdata);
-      //Sometimes test file == test suite, in other cases a test file can contain more test suites
-      let testFiles = json.results[0].suites; 
-      let killers = []; //Test File name [Test Suite name, test case name, status, error]
-      let nonKillers = [];  //Test File name [Test Suite name, test case name, status, error]
-
-      for (var i = 0; i < testFiles.length; i++) {
-        // test suites contained in the current test file
-        let testSuites; 
+      var check=false
+      let testFiles = json.results[0].suites;
+      let killers = [];
+      let nonKillers = [];
+      for (let suite of testFiles) {
         let testFileInfo = []
-        testFileInfo.push(testFiles[i].file)
-        
-        //If the test file contains more test suites
-        if(testFiles[i].suites){
-          testSuites = testFiles[i].suites
-        }else{
-         testSuites = testFiles[i]
-       }
-
-       //Check test methods in each test suite
-        for (var j = 0; j < testSuites.tests.length; j++) {
-          let testCaseInfo = []
-          let test = testSuites.tests[j]
-          testCaseInfo.push(testSuites.title)
-          testCaseInfo.push(test.title)
-          testCaseInfo.push(test.state)
-
-          if (test.state === 'failed') {
-            var errorMessage = test.err.message;
-            if (errorMessage.includes("AssertionError"))
-              testCaseInfo.push("AssertionError")
-            else if (errorMessage.includes("out of gas"))
-              testCaseInfo.push("Out of gas")
-            else if (errorMessage.includes("revert"))
-              testCaseInfo.push("Out of gas")
-            else if (errorMessage.includes("Error"))
-              testCaseInfo.push("Error")
+        testFileInfo.push(suite.file)
+        if (suite.suites.length === 0) {
+          if (suite.failures.length > 0) {
+            check = true
           } else {
-            testCaseInfo.push("")
+            check = false
           }
-          testFileInfo.push(testCaseInfo);
         }
-        
-        if (testFiles[i].failures.length > 0) {
-          killers.push(testFileInfo)
-        } else {
-          nonKillers.push(testFileInfo)
+        else {
+          for (let subSuite of suite.suites) {
+            if (subSuite.failures.length > 0) {
+              check = true
+              break;
+            } else {
+              check = false
+            }
+          }
+        }
+        if(check){
+          killers.push(testFileInfo[0])
+        }
+        else{
+          nonKillers.push(testFileInfo[0])
         }
       }
+
       mutation.killers = killers
       mutation.nonKillers = nonKillers
 

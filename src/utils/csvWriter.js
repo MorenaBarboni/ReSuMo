@@ -43,7 +43,7 @@ function populateMap() {
     var count = 0;
     while (count < numberSuite) {
       var resToAdd = [];
-      var allRes = mochaMutants.map(item => item.results[0].suites[count].title);
+      var allRes = mochaMutants.map(item => item.results[0].suites[count].file);
       allRes.filter(item => {
         if (!resToAdd.includes(item)) {
           resToAdd.push(item);
@@ -78,10 +78,10 @@ function findTestRes(testName, hash) {
     var arrKillers = [];
     var arrNonKillers = [];
     for (let i = 0; i < item.killers.length; i++) {
-      arrKillers.push(item.killers[i][0]);
+      arrKillers.push(item.killers[i]);
     }
     for (let i = 0; i < item.nonKillers.length; i++) {
-      arrNonKillers.push(item.nonKillers[i][0]);
+      arrNonKillers.push(item.nonKillers[i]);
     }
     if (item.hash === hash) {
       if (arrKillers.includes(testName)) {
