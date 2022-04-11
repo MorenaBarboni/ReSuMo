@@ -4,11 +4,11 @@ const glob = require("glob");
 const mkdirp = require("mkdirp");
 const parser = require("@solidity-parser/parser");
 const fsExtra = require("fs-extra");
-const { spawnSync, spawn } = require("child_process");
 const config = require("./config");
 const operators = require("./operators");
 const Reporter = require("./reporter");
 const Instrumenter = require("./instrumenter");
+const testingInterface = require("./testingInterface");
 const path = require("path");
 const { parse } = require("path");
 const chalk = require("chalk");
@@ -21,6 +21,7 @@ const readline = require('readline');
 //Config
 var testingFramework;
 var packageManager;
+var runScript;
 const absoluteSumoDir = config.absoluteSumoDir;
 const sumoDir = config.sumoDir;
 const resumeDir = ".resume";
@@ -35,7 +36,6 @@ const mutantsDir = config.mutantsDir;
 const contractsGlob = config.contractsGlob;
 const testConfigGlob = config.testConfigGlob;
 const packageManagerGlob = config.packageManagerGlob;
-const personalTimeOut=config.testingTimeOutInSec
 //SuMo modules
 const reporter = new Reporter();
 const exReporter = new  exreporter();
@@ -103,8 +103,10 @@ function prepare(callback) {
       packageManagerFile = lockFile;
       if (lockFile.includes("yarn")) {
         packageManager = "yarn";
+        runScript = "run";
       } else {
         packageManager = "npm";
+        runScript = "run-script";
       }
       break;
     }
@@ -203,7 +205,7 @@ function generateAllMutations(files) {
 function preTest() {
   console.log("Pre-Test ...");
 
-  const status = spawnTest();
+  const status = testingInterface.spawnTest(packageManager, testingFramework, runScript);
 
   if (status === 0) {
     console.log("PreTest OK.");
@@ -213,7 +215,7 @@ function preTest() {
   }
 }
 
-
+//Restore test files
 function restoreTestDir() {
   const baselineTest = "./.resume/baseline/tests";
   if (fs.existsSync(baselineTest)) {
@@ -221,8 +223,6 @@ function restoreTestDir() {
     console.log("Test files restored");
   } else
     console.log("No baseline exist ");
-
-
 }
 var compiledContracts  = [];
 
@@ -261,7 +261,7 @@ function test() {
       } else {
         changedContracts = files;
       }
-      spawnCompile();
+      testingInterface.spawnCompile(packageManager, testingFramework, runScript);
       var originalBytecodeMap = new Map();
       var check = false;
       var contractsToMutate=[];
@@ -315,132 +315,6 @@ function test() {
         }
       })
     )}
-
-
-function killGanache() {
-  if (config.ganache) {
-    if (process.platform === "win32") {
-      spawn("taskkill", ["/pid", ganacheChild.pid, "/f", "/t"]);
-    } else if (process.platform === "linux") {
-      ganacheChild.kill("SIGHUP");
-    } else if (process.platform === "darwin") {
-      ganacheChild.kill("SIGHUP");
-    }
-  }
-}
-
-function spawnCompile() {
-  var compileChild;
-
-  //Run a custom compile script
-  if (config.customTestScript) {
-
-    if (process.platform === "win32") {
-      compileChild = spawnSync(packageManager + ".cmd", ["run-script", "compile"], {
-        stdio: "inherit",
-        cwd: targetDir
-      });
-    } else if (process.platform === "linux") {
-      compileChild = spawnSync(packageManager, ["run-script", "compile"], { stdio: "inherit", cwd: targetDir });
-    } else if (process.platform === "darwin") {
-      compileChild = spawnSync(packageManager, ["run-script", "compile"], { stdio: "inherit", cwd: targetDir });
-    } else if (process.platform === "darwin") {
-      compileChild = spawnSync(packageManager, ["run-script", "compile"], { stdio: "inherit", cwd: targetDir });
-    }
-  }   //Spawn a default compile script
-  else {
-    if (process.platform === "win32") {
-      compileChild = spawnSync(testingFramework + ".cmd", ["compile"], { stdio: "inherit", cwd: targetDir });
-    } else if (process.platform === "linux") {
-      compileChild = spawnSync(testingFramework, ["compile"], { stdio: "inherit", cwd: targetDir });
-    } else if (process.platform === "darwin") {
-      compileChild = spawnSync(testingFramework, ["compile"], { stdio: "inherit", cwd: targetDir });
-    } else if (process.platform === "darwin") {
-      compileChild = spawnSync(testingFramework, ["compile"], { stdio: "inherit", cwd: targetDir });
-    }
-  }
-  return compileChild.status === 0;
-}
-
-function spawnTest() {
-
-  var testChild;
-  //Run a custom test script
-  if (config.customTestScript) {
-    if (process.platform === "win32") {
-      testChild = spawnSync(packageManager + ".cmd", ["run-script", "test"], {
-        stdio: "inherit",
-        cwd: targetDir,
-        timeout: 300000
-      });
-
-    } else if (process.platform === "linux") {
-      testChild = spawnSync(packageManager, ["run-script", "test"], {
-        stdio: "inherit",
-        cwd: targetDir,
-        timeout: 300000
-      });
-    } else if (process.platform === "darwin") {
-      testChild = spawnSync(packageManager, ["run-script", "test"], {
-        stdio: "inherit",
-        cwd: targetDir,
-        timeout: 300000
-      });
-    } else if (process.platform === "darwin") {
-      testChild = spawnSync(packageManager, ["run-script", "test"], {
-        stdio: "inherit",
-        cwd: targetDir,
-        timeout: 300000
-      });
-    }
-  }
-  //Spawn a default test process
-  else {
-    if (process.platform === "win32") {
-      testChild = spawnSync(testingFramework + ".cmd", ["test"], { stdio: "inherit", cwd: targetDir, timeout: (personalTimeOut*1000) });
-    } else if (process.platform === "linux") {
-      testChild = spawnSync(testingFramework, ["test"], { stdio: "inherit", cwd: targetDir, timeout: (personalTimeOut*1000) });
-    } else if (process.platform === "darwin") {
-      testChild = spawnSync(testingFramework, ["test"], { stdio: "inherit", cwd: targetDir, timeout: (personalTimeOut*1000) });
-    }
-  }
-
-  let status;
-  if (testChild.error && testChild.error.code === "ETIMEDOUT") {
-    status = 999;
-  } else {
-    status = testChild.status;
-  }
-  //0 = live, !=0 killed, 999 = timedout
-  return status;
-}
-
-//spawn new ganache process
-function spawnGanache() {
-  var child;
-  if (config.ganache) {
-    if (process.platform === "win32") {
-      child = spawn("ganache-cli.cmd", { stdio: "inherit", cwd: targetDir, detached: true });
-    } else if (process.platform === "linux") {
-      child = spawn("ganache-cli", { stdio: "inherit", cwd: targetDir, detached: true });
-    } else if (process.platform === "darwin") {
-      child = spawn("ganache-cli", { stdio: "inherit", cwd: targetDir, detached: true });
-    }
-    child.unref;
-    const waitForGanache = () => {
-      if (!isRunning(child)) {
-        console.log("Waiting for Ganache ...");
-        setTimeout(() => {
-          waitForGanache();
-        }, 250);
-      } else {
-        resolve();
-      }
-    };
-  }
-  return child;
-}
-
 
 function mutationsByHash(mutations) {
   return mutations.reduce((obj, mutation) => {
@@ -606,17 +480,17 @@ function runTest(mutations, originalBytecodeMap, file) {
   for (const mutation of mutations) {
     if ((mutation.file.substring(mutation.file.lastIndexOf("/") + 1)) === (file + ".sol")) {
      var startTime=Date.now()
-      ganacheChild = spawnGanache();
+      ganacheChild = testingInterface.spawnGanache();
       mutation.apply();
       reporter.beginCompile(mutation);
-      const isCompiled = spawnCompile();
+      const isCompiled = testingInterface.spawnCompile(packageManager, testingFramework, runScript);
       if (isCompiled) {
         if (config.tce) {
           tce(mutation, bytecodeMutantsMap, file, originalBytecodeMap);
         }
         if (mutation.status !== "redundant" && mutation.status !== "equivalent") {
           reporter.beginTest(mutation);
-          const result = spawnTest();
+          const result = testingInterface.spawnTest(packageManager, testingFramework, runScript);
           if (result === 0) {
             mutation.status = "live";
           } else if (result === 999) {
@@ -634,7 +508,7 @@ function runTest(mutations, originalBytecodeMap, file) {
       reporter.mutantStatus(mutation);
       exReporter.mutantStatus(mutation);
       mutation.restore();
-      killGanache();
+      testingInterface.killGanache();
       cleanTmp();
       mutation.time=Date.now()-startTime;
     }
