@@ -3,6 +3,7 @@ const fs = require("fs");
 const glob = require("glob");
 const fileSys = require("./fileSys");
 const sol_parser = require("@solidity-parser/parser");
+const acorn = require('acorn');
 const ts = require('typescript');
 const config = require("../config");
 const { factory } = require("typescript");
