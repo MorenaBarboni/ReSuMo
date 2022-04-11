@@ -3,7 +3,7 @@
 const yargs = require('yargs')
 var argv = require('yargs/yargs')(process.argv.slice(2))
 const commands = require('./src/commands')
-const resume = require('./src/resume')
+const resume = require('./src/resume/resume')
 
 yargs
   .usage('$0 <cmd> [args]')

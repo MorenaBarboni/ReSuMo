@@ -1,5 +1,5 @@
 const fs = require("fs");
-const config = require("./../config");
+const config = require("../../config");
 const csvReader = require("./csvReader");
 const mutationJson = config.absoluteSumoDir + "/mutations.json";
 const mochaJson = config.absoluteSumoDir + "/mochawesome-report/mochawesome-";

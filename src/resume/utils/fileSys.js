@@ -1,6 +1,6 @@
 const fs = require("fs-extra");
 const path = require("path");
-const config = require("../config");
+const config = require("../../config");
 
 const config_projectDir = path.isAbsolute(config.targetDir)
   ? config.targetDir
@@ -21,7 +21,7 @@ const loadTestsDirGlob = config_testsDir + config.testsGlob;
 
 const loadMutationOperatorsFile = config.mutationOpConfig;
 
-const resumeDir = path.join(config.resumeDir, ".resume");
+const resumeDir = config.resumeDir;
 const report = path.join(resumeDir, "report.txt");
 
 const baselineDir = path.join(resumeDir, "baseline");

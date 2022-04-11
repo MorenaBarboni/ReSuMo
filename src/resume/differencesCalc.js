@@ -1,7 +1,7 @@
 const fs = require("fs");
-const fileSys = require("./utils/fileSys");
 const path = require("path");
 const checksum = require("checksum");
+const fileSys = require("./utils/fileSys");
 
 function checkContracts(contracts) {
   var oldChecksumsExists = fileSys.existsContractsChecksums();

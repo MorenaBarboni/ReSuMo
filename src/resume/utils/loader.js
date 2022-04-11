@@ -5,7 +5,7 @@ const fileSys = require("./fileSys");
 const sol_parser = require("@solidity-parser/parser");
 const acorn = require('acorn');
 const ts = require('typescript');
-const config = require("../config");
+const config = require("../../config");
 const { factory } = require("typescript");
 
 function loadTests() {
@@ -267,7 +267,7 @@ function loadCurrentMatrixJson() {
 
 function loadFinalMatrix() {
   return loadMatrixJsonFromFile(
-    fs.readFileSync(require("../config").finalMatrixPath)
+    fs.readFileSync(require("../../config").finalMatrixPath)
   );
 }
 

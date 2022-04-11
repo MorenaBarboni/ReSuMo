@@ -1,7 +1,7 @@
 const path = require("path");
-const fileSys = require("./utils/fileSys");
 var DepGraph = require("dependency-graph").DepGraph;
-const config = require("./config");
+const fileSys = require("./utils/fileSys");
+const config = require("../config");
 
 function buildContractsDependencyCircularGraph(contracts) {
   var graph = new DepGraph({ circular: true });

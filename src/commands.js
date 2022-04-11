@@ -1,5 +1,7 @@
-const copy = require("recursive-copy");
 const fs = require("fs");
+const path = require("path");
+const readline = require('readline');
+const copy = require("recursive-copy");
 const glob = require("glob");
 const mkdirp = require("mkdirp");
 const parser = require("@solidity-parser/parser");
@@ -9,22 +11,21 @@ const operators = require("./operators");
 const Reporter = require("./reporter");
 const Instrumenter = require("./instrumenter");
 const testingInterface = require("./testingInterface");
-const path = require("path");
 const { parse } = require("path");
 const chalk = require("chalk");
-const resume = require("./resume");
-const csvWriter = require("./utils/csvWriter");
+const resume = require("./resume/resume");
+const csvWriter = require("./resume/utils/csvWriter");
 const rimraf=require('rimraf')
 const os = require("os");
 const exreporter=require("./exReporter")
-const readline = require('readline');
+
 //Config
 var testingFramework;
 var packageManager;
 var runScript;
 const absoluteSumoDir = config.absoluteSumoDir;
 const sumoDir = config.sumoDir;
-const resumeDir = ".resume";
+const resumeDir = config.resumeDir;
 const targetDir = config.targetDir;
 const baselineDir = config.baselineDir;
 const contractsDir = config.contractsDir;
@@ -155,7 +156,7 @@ function preflight() {
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
       const mutations = generateAllMutations(files)
-      reporter.preflightSummary(mutations)
+      reporter.preflightSummary(mutations)    
       //reporter.preflightToExcel(mutations)
     })
   );
@@ -277,7 +278,7 @@ function test() {
           }
 
         if (check) {
-          exploreDirectories(config.compiledDir)
+          exploreDirectories(compiledDir)
           compiledContracts.map(singleContract=>{
             if(parse(singleContract).name===parse(file).name){
             originalBytecodeMap.set(parse(file).name, saveBytecodeSync(singleContract))
@@ -526,7 +527,7 @@ function runTest(mutations, originalBytecodeMap, file) {
  * @param originalBytecodeMap The map that contains all non-mutated contract bytecode
  */
 function tce(mutation, map, file, originalBytecodeMap) {
-  exploreDirectories(config.compiledDir)
+  exploreDirectories(compiledDir)
   compiledContracts.map(data=>{
     if(parse(data).name===parse(mutation.file).name){
       mutation.bytecode=saveBytecodeSync(data);
