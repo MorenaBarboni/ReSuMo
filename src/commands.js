@@ -265,24 +265,22 @@ function test() {
       var originalBytecodeMap = new Map();
       var check = false;
       var contractsToMutate=[];
-      for (const file of changedContracts) {
-        if (file !== config.ignore)
-          for (const contract of config.ignore) {
-            if (!contract.includes(parse(file).name)) {
+      for (const changedContract of changedContracts) {
+          for (const ignoreElement of config.ignore) {
+            if (ignoreElement!==changedContract) {
               check = true;
             } else {
               check = false;
               break;
             }
           }
-
         if (check) {
           exploreDirectories(config.compiledDir)
           compiledContracts.map(singleContract=>{
-            if(parse(singleContract).name===parse(file).name){
-            originalBytecodeMap.set(parse(file).name, saveBytecodeSync(singleContract))
-            if(!contractsToMutate.includes(file)){
-               contractsToMutate.push(file)
+            if(parse(singleContract).name===parse(changedContract).name){
+            originalBytecodeMap.set(parse(changedContract).name, saveBytecodeSync(singleContract))
+            if(!contractsToMutate.includes(changedContract)){
+               contractsToMutate.push(changedContract)
             }
             }})
         }
