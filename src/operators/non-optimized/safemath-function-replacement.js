@@ -1,4 +1,4 @@
-const Mutation = require('../src/mutation')
+const Mutation = require('../../mutation')
 
 function SFROperator() {}
 

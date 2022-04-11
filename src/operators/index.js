@@ -24,13 +24,13 @@ if (config.optimized) {
   SFROperator = require("./safemath-function-replacement");
   VUROperator = require("./variable-unit-replacement");
 } else {
-  AOROperator = require("../../operators-extended/assignment-replacement");
-  BOROperator = require("../../operators-extended/binary-replacement");
-  EROperator = require("../../operators-extended/enum-replacement");
-  GVROperator = require("../../operators-extended/global-variable-replacement");
-  RVSOperator = require("../../operators-extended/return-values-swap");
-  SFROperator = require("../../operators-extended/safemath-function-replacement");
-  VUROperator = require("../../operators-extended/variable-unit-replacement");
+  AOROperator = require("./non-optimized/assignment-replacement");
+  BOROperator = require("./non-optimized/binary-replacement");
+  EROperator = require("./non-optimized/enum-replacement");
+  GVROperator = require("./non-optimized/global-variable-replacement");
+  RVSOperator = require("./non-optimized/return-values-swap");
+  SFROperator = require("./non-optimized/safemath-function-replacement");
+  VUROperator = require("./non-optimized/variable-unit-replacement");
 }
 
 const ACMOperator = require("./argument-change-overloaded-call");
