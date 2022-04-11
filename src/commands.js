@@ -154,7 +154,7 @@ function preflight() {
       if (err) throw err;
       const mutations = generateAllMutations(files)
       reporter.preflightSummary(mutations)
-      reporter.preflightToExcel(mutations)
+      //reporter.preflightToExcel(mutations)
     })
   );
 }
