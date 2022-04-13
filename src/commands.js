@@ -17,7 +17,6 @@ const resume = require("./resume/resume");
 const csvWriter = require("./resume/utils/csvWriter");
 const rimraf=require('rimraf')
 const os = require("os");
-const exreporter=require("./exReporter")
 
 //Config
 var testingFramework;
@@ -39,7 +38,6 @@ const testConfigGlob = config.testConfigGlob;
 const packageManagerGlob = config.packageManagerGlob;
 //SuMo modules
 const reporter = new Reporter();
-const exReporter = new  exreporter();
 const instrumenter = new Instrumenter();
 const operator = new operators.CompositeOperator([
   new operators.ACMOperator(),
@@ -157,7 +155,7 @@ function preflight() {
       if (err) throw err;
       const mutations = generateAllMutations(files)
       reporter.preflightSummary(mutations)    
-      //reporter.preflightToExcel(mutations)
+      reporter.preflightToExcel(mutations)
     })
   );
 }
@@ -307,9 +305,9 @@ function test() {
         reporter.saveMochawesomeReportInfo();
         reporter.testSummary();
         reporter.printTestReport(testTime);
+        reporter.saveOperatorsResults();
         reporter.restore();
-        exReporter.saveData();
-        exReporter.restore();
+    
         if (config.regressionTestingActived) {
           restoreTestDir();
           csvWriter.csv();
@@ -507,7 +505,6 @@ function runTest(mutations, originalBytecodeMap, file) {
         mutation.status = "stillborn";
       }
       reporter.mutantStatus(mutation);
-      exReporter.mutantStatus(mutation);
       mutation.restore();
       testingInterface.killGanache();
       cleanTmp();
