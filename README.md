@@ -1,1 +1,1 @@
-# SuMo-V2
+# ReSuMo
