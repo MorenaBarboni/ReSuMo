@@ -155,7 +155,7 @@ function preflight() {
       if (err) throw err;
       const mutations = generateAllMutations(files)
       reporter.preflightSummary(mutations)    
-      reporter.preflightToExcel(mutations)
+      //reporter.preflightToExcel(mutations)
     })
   );
 }
@@ -247,7 +247,7 @@ function test() {
         console.error(err);
         process.exit(1);
       }
-      if (config.regressionTestingActived) {
+      if (config.regression) {
         resume.regressionTesting();
         changedContracts = resume.getChangedContracts();
         changedTest = resume.getChangedTest();
@@ -308,7 +308,7 @@ function test() {
         reporter.saveOperatorsResults();
         reporter.restore();
     
-        if (config.regressionTestingActived) {
+        if (config.regression) {
           restoreTestDir();
           csvWriter.csv();
         }

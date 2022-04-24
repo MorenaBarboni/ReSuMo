@@ -16,7 +16,7 @@ module.exports ={
  optimized: true,
  tce: true,
  customTestScript: false,
- regressionTestingActived: false,
+ regression: false,
  testingTimeOutInSec: 300,
  contractsGlob: '/**/*.sol',
  packageManagerGlob: ['/package-lock.json', '/yarn.lock'],
