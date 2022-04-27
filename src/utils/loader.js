@@ -6,7 +6,7 @@ const sol_parser = require("@solidity-parser/parser");
 const ts = require('typescript');
 const config = require("../config");
 const { factory } = require("typescript");
-
+const acorn=require("acorn");
 function loadTests() {
   fileSys.copyTestsToBaseline();
 

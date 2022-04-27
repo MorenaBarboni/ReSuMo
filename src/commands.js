@@ -154,7 +154,7 @@ function preflight() {
       if (err) throw err;
       const mutations = generateAllMutations(files)
       reporter.preflightSummary(mutations)
-      reporter.preflightToExcel(mutations)
+     // reporter.preflightToExcel(mutations)
     })
   );
 }
@@ -334,16 +334,16 @@ function spawnCompile() {
   if (config.customTestScript) {
 
     if (process.platform === "win32") {
-      compileChild = spawnSync(packageManager + ".cmd", ["run-script", "compile"], {
+      compileChild = spawnSync(packageManager + ".cmd", ["run", "compile"], {
         stdio: "inherit",
         cwd: targetDir
       });
     } else if (process.platform === "linux") {
-      compileChild = spawnSync(packageManager, ["run-script", "compile"], { stdio: "inherit", cwd: targetDir });
+      compileChild = spawnSync(packageManager, ["run", "compile"], { stdio: "inherit", cwd: targetDir });
     } else if (process.platform === "darwin") {
-      compileChild = spawnSync(packageManager, ["run-script", "compile"], { stdio: "inherit", cwd: targetDir });
+      compileChild = spawnSync(packageManager, ["run", "compile"], { stdio: "inherit", cwd: targetDir });
     } else if (process.platform === "darwin") {
-      compileChild = spawnSync(packageManager, ["run-script", "compile"], { stdio: "inherit", cwd: targetDir });
+      compileChild = spawnSync(packageManager, ["run", "compile"], { stdio: "inherit", cwd: targetDir });
     }
   }   //Spawn a default compile script
   else {
@@ -366,26 +366,26 @@ function spawnTest() {
   //Run a custom test script
   if (config.customTestScript) {
     if (process.platform === "win32") {
-      testChild = spawnSync(packageManager + ".cmd", ["run-script", "test"], {
+      testChild = spawnSync(packageManager + ".cmd", ["run", "test"], {
         stdio: "inherit",
         cwd: targetDir,
         timeout: 300000
       });
 
     } else if (process.platform === "linux") {
-      testChild = spawnSync(packageManager, ["run-script", "test"], {
+      testChild = spawnSync(packageManager, ["run", "test"], {
         stdio: "inherit",
         cwd: targetDir,
         timeout: 300000
       });
     } else if (process.platform === "darwin") {
-      testChild = spawnSync(packageManager, ["run-script", "test"], {
+      testChild = spawnSync(packageManager, ["run", "test"], {
         stdio: "inherit",
         cwd: targetDir,
         timeout: 300000
       });
     } else if (process.platform === "darwin") {
-      testChild = spawnSync(packageManager, ["run-script", "test"], {
+      testChild = spawnSync(packageManager, ["run", "test"], {
         stdio: "inherit",
         cwd: targetDir,
         timeout: 300000
