@@ -3,7 +3,7 @@ const configFileName = "../operators.config.json";
 const configFile = require(configFileName);
 const config = require("../config");
 
-const Reporter = require(".././reporter");
+const Reporter = require("../reporter");
 const reporter = new Reporter();
 
 //Init operator version
