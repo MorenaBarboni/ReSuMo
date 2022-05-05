@@ -13,7 +13,8 @@ Instrumenter.prototype.setConfig = function(config) {
 
 /* Start instrumentation */
 Instrumenter.prototype.instrumentConfig = function() {
-  console.log("Instrumenting " + config.targetDir + this.testConfigFile);
+  console.log("Instrumenting configuration file:  " + config.targetDir + this.testConfigFile);
+  console.log("\n");
 
   if (this.testConfigFile === "/hardhat.config.js" || this.testConfigFile === "/hardhat.config.ts") {
     instrumentHardhatConfig(this.testConfigFile);

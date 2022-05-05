@@ -16,6 +16,7 @@ const utils = require("./utils");
 const config = require("./config");
 const resume = require("./resume/resume");
 const csvWriter = require("./resume/utils/csvWriter");
+const { report } = require("process");
 
 //SuMo configuration
 const absoluteSumoDir = config.absoluteSumoDir;
@@ -158,7 +159,7 @@ function preflight() {
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
       const mutations = generateAllMutations(files)
-        reporter.preflightSummary(mutations)
+      reporter.preflightSummary(mutations)
       //reporter.preflightToExcel(mutations)
     })
   );
@@ -184,7 +185,7 @@ function preflightAndSave() {
 
 /**
  * Generates  the mutations for each target contract
- *  @param files The smart contracts of the SUT
+ *  @param files The smart contracts under test
  */
 function generateAllMutations(files) {
   reporter.setupReport();
@@ -210,22 +211,21 @@ function generateAllMutations(files) {
 }
 
 /**
- * Check if the original tests pass.
+ * Runs the original test suite to ensure that all tests pass.
  */
 function preTest() {
-  console.log("Pre-Test ...");
-
+  reporter.beginPretest();
+  ganacheChild = testingInterface.spawnGanache();
   const status = testingInterface.spawnTest(packageManager, testingFramework, runScript);
-
   if (status === 0) {
-    console.log("PreTest OK.");
+    console.log("Pre-test OK.");
   } else {
-    console.error("Error: Original tests should pass.");
+    console.error(chalk.red("Error: Original tests should pass."));
     process.exit(1);
   }
+  testingInterface.killGanache();
+  utils.cleanTmp();
 }
-
-
 
 function exploreDirectories(Directory) {
   fs.readdirSync(Directory).forEach(File => {
@@ -237,35 +237,29 @@ function exploreDirectories(Directory) {
   });
 }
 
-//Start mutation testing process
+/**
+ * Starts the mutation testing process
+ */
 function test() {
   prepare(() =>
-
     glob(contractsDir + contractsGlob, (err, files) => {
+
+      //Run the pre-test
+      preTest();
+
+      //Select contracts to mutate and tests to be run
       var changedContracts;
-      var changedTest;
-      var originalTest;
-      if (err) {
-        console.error(err);
-        process.exit(1);
-      }
       if (config.regression) {
-        resume.regressionTesting();
-        changedContracts = resume.getChangedContracts();
-        changedTest = resume.getChangedTest();
-        originalTest = resume.getOriginalTest();
-        for (const singleTest of originalTest) {
-          if (!changedTest.includes(singleTest.path) && !(path.dirname(singleTest.path) === testDir + '/utils' && !(path.dirname(singleTest.path) === testDir + '/json'))) {
-            fs.unlinkSync(singleTest.path);
-          }
-        }
+        changedContracts = resumeSelection();
       } else {
         changedContracts = files;
       }
+
+      //Compile the original contracts and save their bytecode
       testingInterface.spawnCompile(packageManager, testingFramework, runScript);
       var originalBytecodeMap = new Map();
-      var check = false;
       var contractsToMutate = [];
+      var check = false;
       for (const changedContract of changedContracts) {
         for (const ignoreElement of config.ignore) {
           if (ignoreElement !== changedContract) {
@@ -275,7 +269,7 @@ function test() {
             break;
           }
         }
-
+        //save the contracts to be mutated and their bytecode
         if (check) {
           exploreDirectories(buildDir)
           compiledContracts.map(singleContract => {
@@ -289,18 +283,18 @@ function test() {
         }
         check = false
       }
-      console.log("Contracts to mutate and Test: " + originalBytecodeMap.size);
+
+      //Generate the mutations
       instrumenter.instrumentConfig();
       reporter.setupMutationsReport();
-      //Generate mutations
       const mutations = generateAllMutations(contractsToMutate);
-      var startTime = Date.now();
 
       //Compile and test each mutant
+      reporter.beginMutationTesting(originalBytecodeMap, mutations)
+      var startTime = Date.now();    
       for (const file of originalBytecodeMap.keys()) {
         runTest(mutations, originalBytecodeMap, file);
       }
-      //Kill ganache
       var testTime = ((Date.now() - startTime) / 60000).toFixed(2);
 
       instrumenter.restoreConfig();
@@ -317,6 +311,30 @@ function test() {
     })
   )
 }
+
+/**
+ * Invokes ReSuMe to select the contracts to mutate the tests to be run
+ */
+function resumeSelection() {
+  var changedContracts;
+  var changedTest;
+  var originalTest;
+  resume.regressionTesting();
+
+    changedContracts = resume.getChangedContracts();
+    changedTest = resume.getChangedTest();
+    originalTest = resume.getOriginalTest();
+    if(changedContracts == 0 && changedTest == 0){
+      process.exit(1);
+    }
+
+    for (const singleTest of originalTest) {
+      if (!changedTest.includes(singleTest.path) && !(path.dirname(singleTest.path) === testDir + '/utils' && !(path.dirname(singleTest.path) === testDir + '/json'))) {
+        fs.unlinkSync(singleTest.path);
+      }
+    }
+    return changedContracts;
+  }
 
 function mutationsByHash(mutations) {
   return mutations.reduce((obj, mutation) => {

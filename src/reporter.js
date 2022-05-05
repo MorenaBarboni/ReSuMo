@@ -21,8 +21,22 @@ function Reporter() {
   this.timedout = [];
 }
 
-Reporter.prototype._formatMutant = function(mutant) {
-  return chalk.green(mutant.hash());
+Reporter.prototype.chalkMutant = function(mutant) {
+  return chalk.rgb(186,85,211)(mutant.hash());
+};
+
+Reporter.prototype.beginMutationTesting = function(originalBytecodeMap, mutations) {
+  console.log("=====================================");
+  console.log(chalk.yellow.bold("👾 Starting Mutation Testing 👾"))
+  console.log(" - Contracts to be mutated: " + originalBytecodeMap.size);
+  console.log(" - Mutants under test: " + mutations.length);
+  console.log("=====================================");
+};
+
+Reporter.prototype.beginPretest = function(mutant) {
+  console.log("=================");
+  console.log(chalk.yellow.bold("Running pre-test"));
+  console.log("=================");
 };
 
 Reporter.prototype.beginTest = function(mutant) {
@@ -31,53 +45,57 @@ Reporter.prototype.beginTest = function(mutant) {
 
   const hash = mutant.hash();
 
-  console.log("Applying mutation " + hash + " to " + mutant.file);
+  console.log("Applying mutation " +  this.chalkMutant(mutant) + " to " + mutant.file);
   process.stdout.write(mutant.diff());
-  console.log("\n " + chalk.yellow("Running tests ") + "for mutation " + hash);
+  console.log("\n ");
+  console.log(chalk.yellow("Running tests ") + "for mutation " + this.chalkMutant(mutant));
 };
 
 Reporter.prototype.beginCompile = function(mutant) {
   const hash = mutant.hash();
-  console.log("\n " + chalk.yellow("Compiling mutation ") + hash + " of " + mutant.file);
+  console.log("\n ");
+  console.log("\n " + chalk.yellow("Compiling mutation ") +  this.chalkMutant(mutant) + " of " + mutant.file);
 };
+
+
 
 //Set the status of a mutant
 Reporter.prototype.mutantStatus = function (mutant) {
   switch (mutant.status) {
     case "killed":
       this.killed.push(mutant);
-      console.log("Mutant " + this._formatMutant(mutant) + " was killed by tests.");
+      console.log("Mutant " + this.chalkMutant(mutant) + " was killed by tests.");
       fs.writeFileSync(killedDir + "/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function(err) {
         if (err) return console.log(err);
       });
       break;
     case "live":
       this.survived.push(mutant);
-      console.log("Mutant " + this._formatMutant(mutant) + " survived testing.");
+      console.log("Mutant " + this.chalkMutant(mutant) + " survived testing.");
       fs.writeFileSync(liveDir + "/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function(err) {
         if (err) return console.log(err);
       });
       break;
     case "stillborn":
       this.stillborn.push(mutant);
-      console.log("Mutant " + this._formatMutant(mutant) + " is stillborn.");
+      console.log("Mutant " + this.chalkMutant(mutant) + " is stillborn.");
       break;
     case "equivalent":
       this.equivalent.push(mutant);
       console.log(
-        "Mutant " + this._formatMutant(mutant) + " is equivalent."
+        "Mutant " + this.chalkMutant(mutant) + " is equivalent."
       );
       break;
     case "timedout":
       this.timedout.push(mutant);
       console.log(
-        "Mutant " + this._formatMutant(mutant) + " has timed out."
+        "Mutant " + this.chalkMutant(mutant) + " has timed out."
       );
       break;
     case "redundant":
       this.redundant.push(mutant);
       console.log(
-        "Mutant " + this._formatMutant(mutant) + " is redundant."
+        "Mutant " + this.chalkMutant(mutant) + " is redundant."
       );
       break;
   }
@@ -85,9 +103,9 @@ Reporter.prototype.mutantStatus = function (mutant) {
 
 //Prints preflight summary to console
 Reporter.prototype.preflightSummary = function(mutations) {
-  console.log("----------------------");
-  console.log(" " + mutations.length + " mutation(s) found. ");
-  console.log("----------------------");
+  console.log("---------------------------------");
+  console.log(chalk.yellow.bold("Preflight: ") + mutations.length + " mutation(s) found. ");
+  console.log("--------------------------------");
 
   for (const mutation of mutations) {
     console.log(mutation.file + ":" + mutation.hash() + ":");
@@ -181,24 +199,27 @@ Reporter.prototype.preflightToExcel = function (mutations) {
 
 //Prints test summary to console
 Reporter.prototype.testSummary = function () {
-  console.log('\n--- Summary ---')
+  console.log('\n')
+  console.log('==============')
+  console.log(chalk.yellow.bold("Test Summary"))
+  console.log('==============')
   console.log(
-    " " + this.survived.length +
-    " mutants survived testing.\n " +
-    this.killed.length +
-    " mutants killed.\n " +
-    this.stillborn.length +
-    " mutants stillborn.\n " +
-    this.equivalent.length +
+    "• " + this.survived.length +
+    " mutants survived testing.\n" +
+    "• " + this.killed.length +
+    " mutants killed.\n" +
+    "• " + this.stillborn.length +
+    " mutants stillborn.\n" +
+    "• " + this.equivalent.length +
     " mutants equivalent.\n",
-    this.redundant.length +
+    "• " + this.redundant.length +
     " mutants redundant.\n",
-    this.timedout.length +
+    "• " + this.timedout.length +
     " mutants timed-out.\n"
   );
   if (this.survived.length > 0) {
     console.log(
-      "Live: " + this.survived.map(m => this._formatMutant(m)).join(", ")
+      "Live: " + this.survived.map(m => this.chalkMutant(m)).join(", ")
     );
   }
 };

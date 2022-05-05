@@ -123,9 +123,10 @@ function restore() {
     fs.readdirSync(dir).forEach(f => {
       if (f.substring(0, 4) === 'tmp-') {
         rimraf.sync(`${dir}/${f}`)
-        console.log(f + ' deleted')
+        //console.log(f + ' deleted')
       }
     });
+    console.log("Ganache temporary files deleted.");
   }
 
  /**
