@@ -15,7 +15,7 @@ const { parse } = require("path");
 const chalk = require("chalk");
 const resume = require("./resume/resume");
 const csvWriter = require("./resume/utils/csvWriter");
-const rimraf=require('rimraf')
+const rimraf = require('rimraf')
 const os = require("os");
 
 //Config
@@ -141,9 +141,9 @@ function prepare(callback) {
   mkdirp(mutantsDir);
 
   mkdirp(baselineDir, () =>
-      fs.copyFile(targetDir + targetConfigFile, baselineDir + targetConfigFile, (err) => {
-        if (err) throw err;
-      }),
+    fs.copyFile(targetDir + targetConfigFile, baselineDir + targetConfigFile, (err) => {
+      if (err) throw err;
+    }),
     copy(contractsDir, baselineDir, { dot: true }, callback)
   );
 }
@@ -154,7 +154,7 @@ function preflight() {
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
       const mutations = generateAllMutations(files)
-      reporter.preflightSummary(mutations)    
+      reporter.preflightSummary(mutations)
       //reporter.preflightToExcel(mutations)
     })
   );
@@ -223,7 +223,7 @@ function restoreTestDir() {
   } else
     console.log("No baseline exist ");
 }
-var compiledContracts  = [];
+var compiledContracts = [];
 
 function exploreDirectories(Directory) {
   fs.readdirSync(Directory).forEach(File => {
@@ -253,7 +253,7 @@ function test() {
         changedTest = resume.getChangedTest();
         originalTest = resume.getOriginalTest();
         for (const singleTest of originalTest) {
-          if (!changedTest.includes(singleTest.path)&&!(path.dirname(singleTest.path)===testDir+'/utils'&&!(path.dirname(singleTest.path)===testDir+'/json'))) {
+          if (!changedTest.includes(singleTest.path) && !(path.dirname(singleTest.path) === testDir + '/utils' && !(path.dirname(singleTest.path) === testDir + '/json'))) {
             fs.unlinkSync(singleTest.path);
           }
         }
@@ -263,57 +263,58 @@ function test() {
       testingInterface.spawnCompile(packageManager, testingFramework, runScript);
       var originalBytecodeMap = new Map();
       var check = false;
-      var contractsToMutate=[];
-      for (const file of changedContracts) {
-        if (file !== config.ignore)
-          for (const contract of config.ignore) {
-            if (!contract.includes(parse(file).name)) {
-              check = true;
-            } else {
-              check = false;
-              break;
-            }
+      var contractsToMutate = [];
+      for (const changedContract of changedContracts) {
+        for (const ignoreElement of config.ignore) {
+          if (ignoreElement !== changedContract) {
+            check = true;
+          } else {
+            check = false;
+            break;
           }
+        }
 
         if (check) {
           exploreDirectories(compiledDir)
-          compiledContracts.map(singleContract=>{
-            if(parse(singleContract).name===parse(file).name){
-            originalBytecodeMap.set(parse(file).name, saveBytecodeSync(singleContract))
-            if(!contractsToMutate.includes(file)){
-               contractsToMutate.push(file)
+          compiledContracts.map(singleContract => {
+            if (parse(singleContract).name === parse(changedContract).name) {
+              originalBytecodeMap.set(parse(changedContract).name, saveBytecodeSync(singleContract))
+              if (!contractsToMutate.includes(changedContract)) {
+                contractsToMutate.push(changedContract)
+              }
             }
-            }})
+          })
         }
-        check=false
+        check = false
       }
-        console.log("Contracts to mutate and Test: " + originalBytecodeMap.size);
-        instrumenter.instrumentConfig();
-        reporter.setupMutationsReport();
-        //Generate mutations
-        const mutations = generateAllMutations(contractsToMutate);
-        var startTime = Date.now();
+      console.log("Contracts to mutate and Test: " + originalBytecodeMap.size);
+      instrumenter.instrumentConfig();
+      reporter.setupMutationsReport();
+      //Generate mutations
+      const mutations = generateAllMutations(contractsToMutate);
+      var startTime = Date.now();
 
-        //Compile and test each mutant
-        for (const file of originalBytecodeMap.keys()) {
-          runTest(mutations, originalBytecodeMap, file);
-        }
-        //Kill ganache
-        var testTime = ((Date.now() - startTime) / 60000).toFixed(2);
+      //Compile and test each mutant
+      for (const file of originalBytecodeMap.keys()) {
+        runTest(mutations, originalBytecodeMap, file);
+      }
+      //Kill ganache
+      var testTime = ((Date.now() - startTime) / 60000).toFixed(2);
 
-        instrumenter.restoreConfig();
-        reporter.saveMochawesomeReportInfo();
-        reporter.testSummary();
-        reporter.printTestReport(testTime);
-        reporter.saveOperatorsResults();
-        reporter.restore();
-    
-        if (config.regression) {
-          restoreTestDir();
-          csvWriter.csv();
-        }
-      })
-    )}
+      instrumenter.restoreConfig();
+      reporter.saveMochawesomeReportInfo();
+      reporter.testSummary();
+      reporter.printTestReport(testTime);
+      reporter.saveOperatorsResults();
+      reporter.restore();
+
+      if (config.regression) {
+        restoreTestDir();
+        csvWriter.csv();
+      }
+    })
+  )
+}
 
 function mutationsByHash(mutations) {
   return mutations.reduce((obj, mutation) => {
@@ -389,14 +390,14 @@ function deleteResumeFromCLI() {
     input: process.stdin,
     output: process.stdout
   });
-  if(!fs.existsSync(resumeDir)){
+  if (!fs.existsSync(resumeDir)) {
     console.log("Nothing to delete")
     process.exit(0)
   }
-  rl.question("If you delete '.resume' directory you will lose all the regression testing information. Want to proceed? y/n > ",function(response){
-    response=response.trim()
-    response=response.toLowerCase()
-    if(response==='y' || response==='yes'){
+  rl.question("If you delete '.resume' directory you will lose all the regression testing information. Want to proceed? y/n > ", function (response) {
+    response = response.trim()
+    response = response.toLowerCase()
+    if (response === 'y' || response === 'yes') {
       fsExtra.remove(resumeDir);
       console.log("'.resume directory' has been deleted!")
       rl.close()
@@ -407,7 +408,7 @@ function deleteResumeFromCLI() {
     }
   })
 }
-  function deleteResumeFromGUI(){
+function deleteResumeFromGUI() {
   fsExtra.remove(resumeDir);
 }
 
@@ -436,7 +437,7 @@ function restore() {
       for (const file of files) {
         let relativeFilePath = file.split(".sumo/baseline")[1];
         let fileDir = path.dirname(relativeFilePath);
-        fs.mkdir(contractsDir + fileDir, { recursive: true }, function(err) {
+        fs.mkdir(contractsDir + fileDir, { recursive: true }, function (err) {
           if (err) return cb(err);
 
           fs.copyFile(file, contractsDir + relativeFilePath, (err) => {
@@ -478,7 +479,7 @@ function runTest(mutations, originalBytecodeMap, file) {
   const bytecodeMutantsMap = new Map();
   for (const mutation of mutations) {
     if ((mutation.file.substring(mutation.file.lastIndexOf("/") + 1)) === (file + ".sol")) {
-     var startTime=Date.now()
+      var startTime = Date.now()
       ganacheChild = testingInterface.spawnGanache();
       mutation.apply();
       reporter.beginCompile(mutation);
@@ -508,7 +509,7 @@ function runTest(mutations, originalBytecodeMap, file) {
       mutation.restore();
       testingInterface.killGanache();
       cleanTmp();
-      mutation.time=Date.now()-startTime;
+      mutation.time = Date.now() - startTime;
     }
   }
   bytecodeMutantsMap.clear();
@@ -525,9 +526,9 @@ function runTest(mutations, originalBytecodeMap, file) {
  */
 function tce(mutation, map, file, originalBytecodeMap) {
   exploreDirectories(compiledDir)
-  compiledContracts.map(data=>{
-    if(parse(data).name===parse(mutation.file).name){
-      mutation.bytecode=saveBytecodeSync(data);
+  compiledContracts.map(data => {
+    if (parse(data).name === parse(mutation.file).name) {
+      mutation.bytecode = saveBytecodeSync(data);
     }
   })
   if (originalBytecodeMap.get(file) === mutation.bytecode) {
@@ -550,19 +551,19 @@ function tce(mutation, map, file, originalBytecodeMap) {
   }
 }
 
-  function cleanTmp(){
-  var dir= os.tmpdir();
+function cleanTmp() {
+  var dir = os.tmpdir();
   fs.readdirSync(dir).forEach(f => {
-    if(f.substring(0,4)==='tmp-'){
+    if (f.substring(0, 4) === 'tmp-') {
       rimraf.sync(`${dir}/${f}`)
-      console.log(f+' deleted')
+      console.log(f + ' deleted')
     }
-    });
+  });
 }
 
 //function to generate an excel file with test result details, taken from mocha-report dir
-function generateTestExcel(){
-  if(fs.existsSync(sumoDir+'/mochawesome-report'))
+function generateTestExcel() {
+  if (fs.existsSync(sumoDir + '/mochawesome-report'))
     reporter.saveTestData();
   else
     console.log('The mochawesome-report dir does not exist!')
@@ -571,7 +572,7 @@ function generateTestExcel(){
 module.exports = {
   test: test, preflight, preflight, mutate: preflightAndSave, diff: diff, list: list,
   enable: enableOperator, disable: disableOperator, clean: clean, preTest: preTest, restore: restore,
-  delete:deleteResumeFromCLI, deleteResumeFromGUI:deleteResumeFromGUI, generateExcel:generateTestExcel
+  delete: deleteResumeFromCLI, deleteResumeFromGUI: deleteResumeFromGUI, generateExcel: generateTestExcel
 };
 
 
