@@ -15,8 +15,7 @@ const { parse } = require("path");
 const chalk = require("chalk");
 const resume = require("./resume/resume");
 const csvWriter = require("./resume/utils/csvWriter");
-const rimraf = require('rimraf')
-const os = require("os");
+
 
 //Config
 var testingFramework;
@@ -508,7 +507,7 @@ function runTest(mutations, originalBytecodeMap, file) {
       reporter.mutantStatus(mutation);
       mutation.restore();
       testingInterface.killGanache();
-      cleanTmp();
+      testingInterface.cleanTmp();
       mutation.time = Date.now() - startTime;
     }
   }
@@ -549,16 +548,6 @@ function tce(mutation, map, file, originalBytecodeMap) {
   } else {
     map.set(mutation.hash(), mutation.bytecode);
   }
-}
-
-function cleanTmp() {
-  var dir = os.tmpdir();
-  fs.readdirSync(dir).forEach(f => {
-    if (f.substring(0, 4) === 'tmp-') {
-      rimraf.sync(`${dir}/${f}`)
-      console.log(f + ' deleted')
-    }
-  });
 }
 
 //function to generate an excel file with test result details, taken from mocha-report dir
