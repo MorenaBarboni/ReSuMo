@@ -28,7 +28,7 @@ const resumeDir = config.resumeDir;
 const targetDir = config.targetDir;
 const baselineDir = config.baselineDir;
 const contractsDir = config.contractsDir;
-const compiledDir = config.compiledDir;
+const buildDir = config.buildDir;
 const testDir = config.testDir;
 const liveDir = config.liveDir;
 const killedDir = config.killedDir;
@@ -154,7 +154,7 @@ function preflight() {
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
       const mutations = generateAllMutations(files)
-      reporter.preflightSummary(mutations)
+        reporter.preflightSummary(mutations)
       //reporter.preflightToExcel(mutations)
     })
   );
@@ -275,7 +275,7 @@ function test() {
         }
 
         if (check) {
-          exploreDirectories(compiledDir)
+          exploreDirectories(buildDir)
           compiledContracts.map(singleContract => {
             if (parse(singleContract).name === parse(changedContract).name) {
               originalBytecodeMap.set(parse(changedContract).name, saveBytecodeSync(singleContract))
@@ -525,7 +525,7 @@ function runTest(mutations, originalBytecodeMap, file) {
  * @param originalBytecodeMap The map that contains all non-mutated contract bytecode
  */
 function tce(mutation, map, file, originalBytecodeMap) {
-  exploreDirectories(compiledDir)
+  exploreDirectories(buildDir)
   compiledContracts.map(data => {
     if (parse(data).name === parse(mutation.file).name) {
       mutation.bytecode = saveBytecodeSync(data);

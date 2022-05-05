@@ -9,7 +9,7 @@ module.exports ={
  targetDir: '',
  contractsDir: '',
  testDir: '',
- compiledDir: '',
+ buildDir: '',
  ignore: [],
  skipTests: [],
  ganache: true,

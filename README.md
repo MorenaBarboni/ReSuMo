@@ -29,7 +29,7 @@ These fields specify the path to different artefacts of the System Under Test:
 * ```targetDir```: path of the root directory of the SUT where the package.json is located
 * ```contractsDir```: path of the directory where the contracts to be mutated are located
 * ```testDir```: path of the directory where the tests to be evaluated are located
-* ```compiledDir```: path of the directory where Truffle saves the .json file containing the bytecode of the compiled contract(s).
+* ```buildDir```: path of the directory where Truffle saves the .json file containing the bytecode of the compiled contract(s).
  
 ##### 3) Mutation Process
 These fields allow to set up the mutation testing process
