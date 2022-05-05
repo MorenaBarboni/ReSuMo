@@ -106,9 +106,9 @@ your solidity program! 🥳 🤼          \n\n\n
     this.projectPath = config.targetDir;
     this.contractsPath = config.contractsDir;
     this.testPath = config.testDir;
-    this.compiledPath = config.compiledDir;
+    this.compiledPath = config.buildDir;
     this.setTimeOutInSec=config.testingTimeOutInSec;
-    this.regressionTestingActived = config.regressionTestingActived;
+    this.regressionTestingActived = config.regression;
     this.ignorePath = config.ignore;
 
     this.map.set("ACM", operators.ACM);
