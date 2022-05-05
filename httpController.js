@@ -1,5 +1,6 @@
 
 const commands = require('./src/commands')
+const utils = require('./src/utils')
 const host = 'localhost';
 const port = 8000;
 const http=require('http')
@@ -47,7 +48,7 @@ app.post("/deleteResume", function(req,res){
   if (!(fs.existsSync('./.resume'))) {
     res.end('No baseline available, you cannot run clean command')
   }else {
-    commands.deleteResumeFromGUI();
+    utils.cleanResumeFromGUI();
     res.end('".resume" directory deleted')
   }
 });

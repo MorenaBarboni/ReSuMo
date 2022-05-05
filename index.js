@@ -3,6 +3,7 @@
 const yargs = require('yargs')
 var argv = require('yargs/yargs')(process.argv.slice(2))
 const commands = require('./src/commands')
+const utils = require('./src/utils')
 const resume = require('./src/resume/resume')
 
 yargs
@@ -45,14 +46,14 @@ yargs
   }, (argv) => {
     commands.disable(argv.ID)
   })
-  .command('clean', 'clean .sumo directory', (argv) => {
-    commands.clean()
+  .command('cleanSumo', 'clean .sumo directory', (argv) => {
+    utils.cleanSumo()
   })
-  .command('delete','clean .resume directory',(argv)=>{
-    commands.delete()
+  .command('cleanResume','clean .resume directory',(argv)=>{
+    utils.cleanResumeCLI()
   })
   .command('restore', 'restore SUT files', (argv) => {
-    commands.restore()
+    utils.restore()
   })
   .command('generateExcel','generate xlsx with test results info', (argv)=>{
     commands.generateExcel()

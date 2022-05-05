@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const readline = require('readline');
 const copy = require("recursive-copy");
 const glob = require("glob");
 const mkdirp = require("mkdirp");
@@ -11,19 +10,16 @@ const operators = require("./operators");
 const Reporter = require("./reporter");
 const Instrumenter = require("./instrumenter");
 const testingInterface = require("./testingInterface");
+const utils = require("./utils");
+
 const { parse } = require("path");
 const chalk = require("chalk");
 const resume = require("./resume/resume");
 const csvWriter = require("./resume/utils/csvWriter");
 
-
-//Config
-var testingFramework;
-var packageManager;
-var runScript;
+//SuMo configuration
 const absoluteSumoDir = config.absoluteSumoDir;
 const sumoDir = config.sumoDir;
-const resumeDir = config.resumeDir;
 const targetDir = config.targetDir;
 const baselineDir = config.baselineDir;
 const contractsDir = config.contractsDir;
@@ -35,6 +31,11 @@ const mutantsDir = config.mutantsDir;
 const contractsGlob = config.contractsGlob;
 const testConfigGlob = config.testConfigGlob;
 const packageManagerGlob = config.packageManagerGlob;
+var testingFramework;
+var packageManager;
+var runScript;
+var compiledContracts = [];
+
 //SuMo modules
 const reporter = new Reporter();
 const instrumenter = new Instrumenter();
@@ -86,7 +87,9 @@ const operator = new operators.CompositeOperator([
 ]);
 
 
-//Prepare necessary dirs and files, checks SUT configuration
+/**
+ * Prepare the necessary directories and files, checks the SUT configuration
+ */
 function prepare(callback) {
 
   if (absoluteSumoDir === "" || targetDir === "" || contractsDir === "" || testDir === "") {
@@ -147,7 +150,9 @@ function prepare(callback) {
   );
 }
 
-//Shows a summary of the available mutants without starting the testing process.
+/**
+ * Shows a summary of the available mutants without starting the testing process.
+ */
 function preflight() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
@@ -159,8 +164,10 @@ function preflight() {
   );
 }
 
-//Shows a summary of the available mutants without starting the testing process.
-//Saves the mutants to file.
+/**
+ * Shows a summary of the available mutants without starting the testing process and
+ * saves the mutants to file.
+ */
 function preflightAndSave() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
@@ -175,7 +182,10 @@ function preflightAndSave() {
   );
 }
 
-//Generates mutations for each target contract
+/**
+ * Generates  the mutations for each target contract
+ *  @param files The smart contracts of the SUT
+ */
 function generateAllMutations(files) {
   reporter.setupReport();
   let mutations = [];
@@ -199,7 +209,9 @@ function generateAllMutations(files) {
   return mutations;
 }
 
-//Check if the original tests pass
+/**
+ * Check if the original tests pass.
+ */
 function preTest() {
   console.log("Pre-Test ...");
 
@@ -213,16 +225,7 @@ function preTest() {
   }
 }
 
-//Restore test files
-function restoreTestDir() {
-  const baselineTest = "./.resume/baseline/tests";
-  if (fs.existsSync(baselineTest)) {
-    fsExtra.copySync(baselineTest, config.testDir);
-    console.log("Test files restored");
-  } else
-    console.log("No baseline exist ");
-}
-var compiledContracts = [];
+
 
 function exploreDirectories(Directory) {
   fs.readdirSync(Directory).forEach(File => {
@@ -308,7 +311,7 @@ function test() {
       reporter.restore();
 
       if (config.regression) {
-        restoreTestDir();
+        utils.restoreTestDir();
         csvWriter.csv();
       }
     })
@@ -379,77 +382,7 @@ function disableOperator(ID) {
   }
 }
 
-//deletes .sumo folder
-function clean() {
-  fsExtra.remove(sumoDir);
-}
 
-function deleteResumeFromCLI() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-  if (!fs.existsSync(resumeDir)) {
-    console.log("Nothing to delete")
-    process.exit(0)
-  }
-  rl.question("If you delete '.resume' directory you will lose all the regression testing information. Want to proceed? y/n > ", function (response) {
-    response = response.trim()
-    response = response.toLowerCase()
-    if (response === 'y' || response === 'yes') {
-      fsExtra.remove(resumeDir);
-      console.log("'.resume directory' has been deleted!")
-      rl.close()
-    }
-    else {
-      console.log('Nothing has been deleted')
-      rl.close()
-    }
-  })
-}
-function deleteResumeFromGUI() {
-  fsExtra.remove(resumeDir);
-}
-
-
-//restores SUT files
-function restore() {
-
-  if (fs.existsSync(baselineDir)) {
-
-    let targetConfigFile;
-    for (const configFile of testConfigGlob) {
-      if (fs.existsSync(baselineDir + configFile)) {
-        targetConfigFile = configFile;
-        break;
-      }
-    }
-    if (targetConfigFile) {
-      fs.copyFile(baselineDir + targetConfigFile, targetDir + targetConfigFile, (err) => {
-        if (err) throw err;
-      });
-    }
-
-    glob(baselineDir + contractsGlob, (err, files) => {
-      if (err) throw err;
-
-      for (const file of files) {
-        let relativeFilePath = file.split(".sumo/baseline")[1];
-        let fileDir = path.dirname(relativeFilePath);
-        fs.mkdir(contractsDir + fileDir, { recursive: true }, function (err) {
-          if (err) return cb(err);
-
-          fs.copyFile(file, contractsDir + relativeFilePath, (err) => {
-            if (err) throw err;
-          });
-        });
-      }
-    });
-    console.log("Project restored.");
-  } else {
-    console.log("No baseline available.");
-  }
-}
 
 /**
  *The <b>saveBytecodeSync</b> function return the original bytecode of a certain contract
@@ -507,7 +440,7 @@ function runTest(mutations, originalBytecodeMap, file) {
       reporter.mutantStatus(mutation);
       mutation.restore();
       testingInterface.killGanache();
-      testingInterface.cleanTmp();
+      utils.cleanTmp();
       mutation.time = Date.now() - startTime;
     }
   }
@@ -560,8 +493,7 @@ function generateTestExcel() {
 
 module.exports = {
   test: test, preflight, preflight, mutate: preflightAndSave, diff: diff, list: list,
-  enable: enableOperator, disable: disableOperator, clean: clean, preTest: preTest, restore: restore,
-  delete: deleteResumeFromCLI, deleteResumeFromGUI: deleteResumeFromGUI, generateExcel: generateTestExcel
+  enable: enableOperator, disable: disableOperator, preTest: preTest, generateExcel: generateTestExcel
 };
 
 
