@@ -18,7 +18,8 @@ CBDOperator.prototype.getMutations = function(file, source, visit) {
           end = c.range[1];
           var text = source.slice(start, end + 1);
           var replacement = "/*" + text + "*/";
-          mutations.push(new Mutation(file, start, end + 1, replacement, this.ID));
+          let rule = "CBD-t1r1";
+          mutations.push(new Mutation(file, start, end + 1, replacement, this.ID, rule));
         });
       }
     }

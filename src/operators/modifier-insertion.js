@@ -112,18 +112,19 @@ MOIOperator.prototype.getMutations = function(file, source, visit) {
     var startM = modifierNode.range[0];
     var endM = modifierNode.range[1] + 1;
     var modifier = source.substring(startM, endM);
+    let rule = "MOI-t1r1"
 
     //If the function has return parameters
     if (functionNode.returnParameters && functionNode.returnParameters.length > 0) {
       var slice1 = functionSignature.split("returns")[0];
       var slice2 = " returns" + functionSignature.split("returns")[1];
       var replacement = slice1 + modifier + slice2;
-      mutations.push(new Mutation(file, startF, endF, replacement, ID));
+      mutations.push(new Mutation(file, startF, endF, replacement, ID, rule));
     }
     //If the function has no return parameters
     else {
       var replacement = functionSignature + modifier + " ";
-      mutations.push(new Mutation(file, startF, endF, replacement, ID));
+      mutations.push(new Mutation(file, startF, endF, replacement, ID, rule));
     }
 
   }

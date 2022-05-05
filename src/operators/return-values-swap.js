@@ -90,7 +90,8 @@ RVSOperator.prototype.getMutations = function(file, source, visit) {
           }
         }
         if (replacement) {
-          mutations.push(new Mutation(file, exprStart, exprEnd + 1, replacement, this.ID));
+          let rule = "RVS-t1r1"          
+          mutations.push(new Mutation(file, exprStart, exprEnd + 1, replacement, this.ID, rule));
         }
       }
 

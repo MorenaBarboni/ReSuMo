@@ -45,7 +45,8 @@ OLFDOperator.prototype.getMutations = function(file, source, visit) {
         var end = node.range[1];
         var text = source.slice(start, end + 1);
         replacement = "/*" + text + "*/";
-        mutations.push(new Mutation(file, start, end + 1, replacement, ID));
+        let rule = "OLFD-t1r1"
+        mutations.push(new Mutation(file, start, end + 1, replacement, ID, rule));
       }
     });
   }

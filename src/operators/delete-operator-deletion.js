@@ -11,10 +11,11 @@ DODOperator.prototype.getMutations = function(file, source, visit) {
   visit({
     UnaryOperation: (node) => {
       if (node.operator == "delete") {
+        let rule = "DOD-t1r1";   
         const start = node.range[0];
         const end = node.range[1];
         var replacement = source.slice(node.subExpression.range[0], node.subExpression.range[1] + 1);
-        mutations.push(new Mutation(file, start, end + 1, replacement, this.ID));
+        mutations.push(new Mutation(file, start, end + 1, replacement, this.ID, rule));
       }
     }
   });

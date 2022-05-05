@@ -156,12 +156,16 @@ AVROperator.prototype.getMutations = function(file, source, visit) {
   function mutateSimpleAddress(node) {
     const start = node.range[0];
     const end = node.range[1];
-    mutations.push(new Mutation(file, start, end + 1, "address(this)", ID));
-    mutations.push(new Mutation(file, start, end + 1, "address(0)", ID));
+    let rule = "AVR-t1r1";
+    let rule2 = "AVR-t1r2";
+    let rule3 = "AVR-t1r3";
+
+    mutations.push(new Mutation(file, start, end + 1, "address(this)", ID, rule));
+    mutations.push(new Mutation(file, start, end + 1, "address(0)", ID, rule2));
     //Swap the literal address with each declared literal address
     literalAddress.forEach(a => {
       if (a !== node.number)
-        mutations.push(new Mutation(file, start, end + 2, a + ";", ID));
+        mutations.push(new Mutation(file, start, end + 2, a + ";", ID, rule3));
     });
   }
 
@@ -171,31 +175,39 @@ AVROperator.prototype.getMutations = function(file, source, visit) {
     const end = node.arguments[0].range[1];
     var arg = node.arguments[0];
     var thisExpr = source.slice(node.range[0], node.range[1] + 1);
+    let rule3;
+    let rule4;
 
     //Mutate assignment to address(varName)
     if (arg.type === "Identifier" && arg.name !== "this") {
-      mutations.push(new Mutation(file, start, end + 1, "this", ID));
-      mutations.push(new Mutation(file, start, end + 1, "0", ID));
+      rule3 = "AVR-t2r1";
+      rule4 = "AVR-t2r2";
+      mutations.push(new Mutation(file, start, end + 1, "this", ID, rule3));
+      mutations.push(new Mutation(file, start, end + 1, "0", ID, rule4));
     }
     //Mutate assignment to address(this)
-    else if (arg.type === "Identifier" && arg.name === "this", ID) {
-      mutations.push(new Mutation(file, start, end + 1, "0", ID));
+    else if (arg.type === "Identifier" && arg.name === "this") {
+      rule3 = "AVR-t3r1";
+      mutations.push(new Mutation(file, start, end + 1, "0", ID, rule3));
     }
 
     //address(0x123)
     else if (arg.type === "NumberLiteral") {
+      rule3 = "AVR-t3r1"
+      rule4 = "AVR-t3r2";
       var addrValue = parseInt(arg.number);
       if (addrValue !== 0) {
-        mutations.push(new Mutation(file, start, end + 1, "0", ID));
+        mutations.push(new Mutation(file, start, end + 1, "0", ID, rule3));
       }
-      mutations.push(new Mutation(file, start, end + 1, "this", ID));
+      mutations.push(new Mutation(file, start, end + 1, "this", ID, rule4));
     }
     //Swap the function with each declared address
     literalAddress.forEach(a => {
+      let rule5 = "AVR-t4r1"
       if (a !== thisExpr) {
         var start = node.expression.range[0];
         var end = node.arguments[0].range[1];
-        mutations.push(new Mutation(file, start, end + 2, a, ID));
+        mutations.push(new Mutation(file, start, end + 2, a, ID, rule5));
       }
     });
   }

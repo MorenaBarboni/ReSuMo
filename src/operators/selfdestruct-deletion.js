@@ -16,7 +16,8 @@ SFDOperator.prototype.getMutations = function(file, source, visit) {
         const delimiter = temp.indexOf(";");
         const end = start + delimiter;
         const text = source.slice(start, end + 1);
-        mutations.push(new Mutation(file, start, end + 1, "/* " + text + " */", this.ID));
+        let rule =  "SFD-t1r1"
+        mutations.push(new Mutation(file, start, end + 1, "/* " + text + " */", this.ID, rule));
       }
     }
   });

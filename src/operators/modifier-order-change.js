@@ -22,7 +22,8 @@ MOCOperator.prototype.getMutations = function(file, source, visit) {
             replacement = replacement.replace(mod1, "*").replace(mod2, mod1).replace("*", mod2);
           }
         }
-        mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, replacement, this.ID));
+        let rule = "MOC-t1r1"
+        mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, replacement, this.ID, rule));
       }
     }
   });

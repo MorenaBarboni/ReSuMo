@@ -57,13 +57,17 @@ ILROperator.prototype.getMutations = function(file, source, visit) {
         }
         if (node.number == 1) {
           var sliced = source.slice(node.range[0] - 1, node.range[0]);
+          let rule = "ILR-t1r1"
           if (sliced === "-")
-            mutations.push(new Mutation(file, node.range[0] - 1, node.range[1] + 1, "0" + subdenomination, ID));
+            mutations.push(new Mutation(file, node.range[0] - 1, node.range[1] + 1, "0" + subdenomination, ID, rule));
           else
-            mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, "0" + subdenomination, ID));
+            mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, "0" + subdenomination, ID, rule));
         } else if (node.number == 0) {
-          mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, "1" + subdenomination, ID));
+          let rule2 = "ILR-t2r1"
+          mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, "1" + subdenomination, ID, rule2));
         } else {
+          let rule3 = "ILR-t3r1"
+          let rule4 = "ILR-t3r2"
           var num = Number(node.number);
           var inc;
           var dec;
@@ -76,8 +80,8 @@ ILROperator.prototype.getMutations = function(file, source, visit) {
             inc = BigInt(num + 1n);
             dec = BigInt(num - 1n);
           }
-          mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, dec + subdenomination, ID));
-          mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, inc + subdenomination, ID));
+          mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, dec + subdenomination, ID, rule3));
+          mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, inc + subdenomination, ID, rule4));
         }
       }
     }

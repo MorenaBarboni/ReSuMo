@@ -13,12 +13,13 @@ function splice(str, start, length, replacement) {
   return str.substring(0, start) + replacement + str.substring(start + length);
 }
 
-function Mutation(file, start, end, replace, operator, status = null, killers = [], nonKillers = [], bytecode, time=null) {
+function Mutation(file, start, end, replace, operator, rule = null, status = null, killers = [], nonKillers = [], bytecode, time=null) {
   this.file = file;
   this.start = start;
   this.end = end;
   this.replace = replace;
   this.operator = operator;
+  this.rule = rule;
   this.status = status;
   this.bytecode = bytecode;
 }

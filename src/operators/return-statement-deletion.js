@@ -17,7 +17,8 @@ RSDoperator.prototype.getMutations = function(file, source, visit) {
       const text = source.slice(start, end + 1);
       const replacement = "/* " + text + " */";
 
-      mutations.push(new Mutation(file, start, end + 1, replacement, this.ID));
+      let rule = "RSD-t1r1"
+      mutations.push(new Mutation(file, start, end + 1, replacement, this.ID, rule));
     }
   });
 

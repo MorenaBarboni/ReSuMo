@@ -119,23 +119,27 @@ Reporter.prototype.preflightToExcel = function (mutations) {
     .string("Operator")
     .style(headerStyle);
 
-  worksheet.cell(1, 2)
-    .string("Hash")
+    worksheet.cell(1, 2)
+    .string("Rule")
     .style(headerStyle);
 
   worksheet.cell(1, 3)
-    .string("File")
+    .string("Hash")
     .style(headerStyle);
 
   worksheet.cell(1, 4)
-    .string("Start Index")
+    .string("File")
     .style(headerStyle);
 
   worksheet.cell(1, 5)
+    .string("Start Index")
+    .style(headerStyle);
+
+  worksheet.cell(1, 6)
     .string("End Index")
     .style(headerStyle); worksheet.cell(1, 2)
 
-  worksheet.cell(1, 6)
+  worksheet.cell(1, 7)
     .string("Replacement")
     .style(headerStyle); worksheet.cell(1, 2)
 
@@ -153,23 +157,30 @@ Reporter.prototype.preflightToExcel = function (mutations) {
       .string(mutations[i].operator)
       .style(style);
 
-    worksheet.cell(i+2, 2)
+      if(mutations[i].rule){
+        let rule = mutations[i].rule;
+        worksheet.cell(i+2, 2)
+        .string(rule)
+        .style(style);
+      }   
+
+    worksheet.cell(i+2, 3)
       .string(mutations[i].hash())
       .style(style);
 
-    worksheet.cell(i+2, 3)
+    worksheet.cell(i+2, 4)
       .string(mutations[i].file)
       .style(style);
 
-    worksheet.cell(i+2, 4)
+    worksheet.cell(i+2, 5)
       .number(mutations[i].start)
       .style(style);
 
-    worksheet.cell(i+2, 5)
+    worksheet.cell(i+2, 6)
       .number(mutations[i].end)
       .style(style);
 
-    worksheet.cell(i+2, 6)
+    worksheet.cell(i+2, 7)
       .string(mutations[i].replace)
       .style(style);
 

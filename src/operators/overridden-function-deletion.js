@@ -22,7 +22,8 @@ ORFDOperator.prototype.getMutations = function(file, source, visit) {
                 var end = node.range[1] + 1;
                 var text = source.slice(start, end);
                 replacement = "/*" + text + "*/";
-                mutations.push(new Mutation(file, start, end, replacement, this.ID));
+                let rule = "ORFD-t1r1"
+                mutations.push(new Mutation(file, start, end, replacement, this.ID, rule));
               }
               ranges.push(node.range);
 

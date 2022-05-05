@@ -14,7 +14,8 @@ SLRoperator.prototype.getMutations = function(file, source, visit) {
     StringLiteral: (node) => {
       if (prevRange != node.range) {
         if (node.value) {
-          mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, "\"\"", this.ID));
+          let rule =  "SLR-t1r1"
+          mutations.push(new Mutation(file, node.range[0], node.range[1] + 1, "\"\"", this.ID, rule));
         }
       }
       prevRange = node.range;

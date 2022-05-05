@@ -81,7 +81,8 @@ ACMOperator.prototype.getMutations = function(file, source, visit) {
 
   function apply(originalStart, originalEnd, replacementStart, replacementEnd) {
     var text = source.slice(replacementStart, replacementEnd + 1);
-    mutations.push(new Mutation(file, originalStart, originalEnd + 1, text, this.ID));
+    let rule = "ACM-t1r1"
+    mutations.push(new Mutation(file, originalStart, originalEnd + 1, text, this.ID, rule));
   }
 
 

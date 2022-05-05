@@ -120,7 +120,8 @@ MOROperator.prototype.getMutations = function(file, source, visit) {
 
       /*the replacement is valid if it does not match any of the attached modifiers*/
       if (replacement !== funcModifier && !funcModifiers.includes(replacement)) {
-        mutations.push(new Mutation(file, start, end, replacement, "MOR"));
+        let rule = "MOR-t1r1"
+        mutations.push(new Mutation(file, start, end, replacement, "MOR", rule));
       }
     }
   }

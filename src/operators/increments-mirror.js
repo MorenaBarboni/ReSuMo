@@ -22,7 +22,8 @@ ICMOperator.prototype.getMutations = function(file, source, visit) {
       }
 
       if (replacement) {
-        mutations.push(new Mutation(file, start, end, replacement, this.ID));
+        let rule = "ICM-t1r1"
+        mutations.push(new Mutation(file, start, end, replacement, this.ID, rule));
       }
     }
   });

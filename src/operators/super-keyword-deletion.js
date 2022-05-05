@@ -18,7 +18,8 @@ SKDOperator.prototype.getMutations = function(file, source, visit) {
             if (node.expression.name == "super") {
               var start = node.expression.range[0];
               var end = node.expression.range[1];
-              mutations.push(new Mutation(file, start, end + 2, "", this.ID));
+              let rule =  "SKD-t1r1"
+              mutations.push(new Mutation(file, start, end + 2, "", this.ID, rule));
             }
           }
         });

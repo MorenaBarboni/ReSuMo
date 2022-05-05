@@ -27,7 +27,8 @@ SKIOperator.prototype.getMutations = function(file, source, visit) {
                 var end = node.expression.range[1];
                 var text = source.slice(start, end);
                 var replacement = "super." + text;
-                mutations.push(new Mutation(file, start, end, replacement, this.ID));
+                let rule =  "SKI-t1r1";
+                mutations.push(new Mutation(file, start, end, replacement, this.ID, rule));
               }
             }
           });

@@ -22,19 +22,24 @@ MCROperator.prototype.getMutations = function(file, source, visit) {
 
           switch (node.expression.name) {
             case "addmod":
-              mutations.push(new Mutation(file, start, end + 1, "mulmod", this.ID));
+              let rule = "MCR-M-t1r1"  
+              mutations.push(new Mutation(file, start, end + 1, "mulmod", this.ID, rule));
               break;
             case "mulmod":
-              mutations.push(new Mutation(file, start, end + 1, "addmod", this.ID));
+              let rule2 = "MCR-M-t2r1"  
+              mutations.push(new Mutation(file, start, end + 1, "addmod", this.ID, rule2));
               break;
             case "keccak256":
-              mutations.push(new Mutation(file, start, end + 1, "sha256", this.ID));
+              let rule3 = "MCR-C-t1r1"  
+              mutations.push(new Mutation(file, start, end + 1, "sha256", this.ID, rule3));
               break;
             case "sha256":
-              mutations.push(new Mutation(file, start, end + 1, "keccak256", this.ID));
+              let rule4 = "MCR-C-t2r1"  
+              mutations.push(new Mutation(file, start, end + 1, "keccak256", this.ID, rule4));
               break;
             case "ripemd160":
-              mutations.push(new Mutation(file, start, end + 1, "sha256", this.ID));
+              let rule5 = "MCR-C-t3r1"  
+              mutations.push(new Mutation(file, start, end + 1, "sha256", this.ID, rule5));
               break;
           }
         }

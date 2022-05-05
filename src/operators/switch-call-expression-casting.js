@@ -55,7 +55,8 @@ SCECOperator.prototype.getMutations = function(file, source, visit) {
       casts.forEach(c2 => {
         address2 = c2.arguments[0].number;
         if (address !== address2) {
-          mutations.push(new Mutation(file, start, end + 1, address2, this.ID));
+          let rule =  "SCEC-t1r1"
+          mutations.push(new Mutation(file, start, end + 1, address2, this.ID, rule));
         }
       });
     });

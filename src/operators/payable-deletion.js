@@ -15,7 +15,8 @@ PKDOperator.prototype.getMutations = function(file, source, visit) {
       if (node.stateMutability === "payable" && !node.isReceiveEther && !node.isVirtual && !node.override) {
         var functionSignature = source.substring(node.range[0], node.range[1]);
         replacement = functionSignature.replace("payable", "");
-        mutations.push(new Mutation(file, node.range[0], node.range[1], replacement, this.ID));
+        let rule = "PKD-t1r1"
+        mutations.push(new Mutation(file, node.range[0], node.range[1], replacement, this.ID, rule));
       }
     }
   });
