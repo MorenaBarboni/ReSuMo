@@ -159,7 +159,7 @@ function loadTests() {
         ImportDirective: function (node) {
 
           //used contract is a test
-          if (node.path.includes(path.basename(config.testsDir))) {
+          if (node.path.includes(path.basename(config.testDir))) {
             requires.push(path.basename(node.path).split('.sol')[0]);
           }
           //used contract is a contract under test
