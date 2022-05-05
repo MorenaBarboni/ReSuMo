@@ -1,5 +1,5 @@
 
-const commands = require('./src/commands')
+const mutationRunner = require('./src/mutationRunner')
 const utils = require('./src/utils')
 const host = 'localhost';
 const port = 8000;
@@ -39,7 +39,7 @@ app.post("/clean", function(req,res){
   if (!(fs.existsSync(config.baselineDir))) {
     res.end('No baseline available, you cannot run clean command')
   }else {
-    commands.clean();
+    mutationRunner.clean();
     res.end('".sumo" directory deleted')
   }
 });
@@ -54,18 +54,18 @@ app.post("/deleteResume", function(req,res){
 });
 
 app.post("/preflight", function(req,res){
-  commands.preflight();
+  mutationRunner.preflight();
   res.end('Preflight executed')
 });
 
 app.post("/mutate", function(req,res){
 
-  commands.mutate();
+  mutationRunner.mutate();
   res.end('Mutations applied')
 });
 
 app.post("/test", function(req,res){
-  commands.test()
+  mutationRunner.test()
   res.end("I'm running test, check your console...")
 });
 
@@ -73,18 +73,18 @@ app.post("/restore", function(req,res){
   if (!(fs.existsSync(config.baselineDir))) {
     res.end('No baseline available, you cannot run restore command')
   }else {
-    commands.restore();
+    mutationRunner.restore();
     res.end('Contracts restored')
   }});
 
 app.post("/enableOperator:id", function(req,res){
   const operator=req.params.id;
-  commands.enable(operator);
+  mutationRunner.enable(operator);
   res.end()
 });
 app.post("/disableOperator:id", function(req,res){
   const operator=req.params.id;
-  commands.disable(operator);
+  mutationRunner.disable(operator);
   res.end()
 });
 

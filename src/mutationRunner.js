@@ -4,16 +4,16 @@ const copy = require("recursive-copy");
 const glob = require("glob");
 const mkdirp = require("mkdirp");
 const parser = require("@solidity-parser/parser");
-const fsExtra = require("fs-extra");
-const config = require("./config");
-const operators = require("./operators");
+const { parse } = require("path");
+const chalk = require("chalk");
+
+//SuMo modules
 const Reporter = require("./reporter");
 const Instrumenter = require("./instrumenter");
 const testingInterface = require("./testingInterface");
+const operators = require("./operators");
 const utils = require("./utils");
-
-const { parse } = require("path");
-const chalk = require("chalk");
+const config = require("./config");
 const resume = require("./resume/resume");
 const csvWriter = require("./resume/utils/csvWriter");
 
@@ -483,7 +483,9 @@ function tce(mutation, map, file, originalBytecodeMap) {
   }
 }
 
-//function to generate an excel file with test result details, taken from mocha-report dir
+/**
+ Saves the test results extracted from the  mocha-report dir to an excel file
+ */
 function generateTestExcel() {
   if (fs.existsSync(sumoDir + '/mochawesome-report'))
     reporter.saveTestData();

@@ -2,17 +2,17 @@
 
 const yargs = require('yargs')
 var argv = require('yargs/yargs')(process.argv.slice(2))
-const commands = require('./src/commands')
+const mutationRunner = require('./src/mutationRunner')
 const utils = require('./src/utils')
 const resume = require('./src/resume/resume')
 
 yargs
   .usage('$0 <cmd> [args]')
-  .command('preflight', 'print preflight summary', commands.preflight)
-  .command('mutate', 'save mutants to file', commands.mutate)
+  .command('preflight', 'print preflight summary', mutationRunner.preflight)
+  .command('mutate', 'save mutants to file', mutationRunner.mutate)
   .command('regression', 'starting regression testing process...', resume.regressionTesting)
   .command('pretest', 'run tests on the original contracts', (argv) => {
-    commands.preTest()
+    mutationRunner.preTest()
   })
   .command('test', 'run tests', (yargs) => {
     yargs.option('failfast', {
@@ -20,14 +20,14 @@ yargs
       default: false,
       describe: 'abort on first surviving mutant'
     })
-  }, commands.test)
+  }, mutationRunner.test)
   .command('diff <hash>', 'show diff for a given hash', (yargs) => {
     yargs.positional('hash', {
       type: 'string',
       describe: 'hash of mutant'
     })
-  }, commands.diff)
-  .command('list', 'print list of enabled mutation operators', commands.list)
+  }, mutationRunner.diff)
+  .command('list', 'print list of enabled mutation operators', mutationRunner.list)
   .command('enable [ID]', 'enable a mutation operator', (yargs) => {
     yargs
       .positional('ID', {
@@ -35,7 +35,7 @@ yargs
         describe: 'ID of the mutation operator to be enabled',
       })
   }, (argv) => {
-    commands.enable(argv.ID)
+    mutationRunner.enable(argv.ID)
   })
   .command('disable [ID]', 'disable a mutation operator', (yargs) => {
     yargs
@@ -44,7 +44,7 @@ yargs
         describe: 'ID of the mutation operator to be disabled.',
       })
   }, (argv) => {
-    commands.disable(argv.ID)
+    mutationRunner.disable(argv.ID)
   })
   .command('cleanSumo', 'clean .sumo directory', (argv) => {
     utils.cleanSumo()
@@ -56,7 +56,7 @@ yargs
     utils.restore()
   })
   .command('generateExcel','generate xlsx with test results info', (argv)=>{
-    commands.generateExcel()
+    mutationRunner.generateExcel()
   })
   .help()
   .argv
