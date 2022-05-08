@@ -34,7 +34,7 @@ These fields specify the path to different artefacts of the System Under Test:
 ##### 3) Mutation Process
 These fields allow to set up the mutation testing process
 
-*  ```ignore```:  array of paths to contract files (or contract folders) that must be ignored by ReSuMo during mutation testing
+*  ```skipContracts```:  array of paths to contract files (or contract folders) that must be ignored by ReSuMo during mutation testing
 * ```skipTests```:   array of paths to test files that must be ignored by ReSuMo during regression mutation testing
 * ```ganache```: automatically spawn Ganache instances during the testing process (true by default)
 * ```optimized```: employ operator optimizations (true by default),

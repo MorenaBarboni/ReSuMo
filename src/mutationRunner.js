@@ -194,7 +194,7 @@ function generateAllMutations(files) {
 
   for (const file of files) {
     let ignoreFile = false;
-    for (const path of config.ignore) {
+    for (const path of config.skipContracts) {
       if (file.startsWith(path))
         ignoreFile = true;
     }
@@ -245,7 +245,7 @@ function test() {
     glob(contractsDir + contractsGlob, (err, files) => {
 
       //Run the pre-test
-      preTest();
+      //preTest();
 
       //Select contracts to mutate and tests to be run
       var changedContracts;
@@ -261,7 +261,7 @@ function test() {
       var contractsToMutate = [];
       var check = false;
       for (const changedContract of changedContracts) {
-        for (const ignoreElement of config.ignore) {
+        for (const ignoreElement of config.skipContracts) {
           if (ignoreElement !== changedContract) {
             check = true;
           } else {

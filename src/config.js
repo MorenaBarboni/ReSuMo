@@ -10,7 +10,7 @@ module.exports ={
  contractsDir: '',
  testDir: '',
  buildDir: '',
- ignore: [],
+ skipContracts: [],
  skipTests: [],
  ganache: true,
  optimized: true,
