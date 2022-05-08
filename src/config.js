@@ -12,6 +12,7 @@ module.exports ={
  buildDir: '',
  skipContracts: [],
  skipTests: [],
+ testUtils: [],
  ganache: true,
  optimized: true,
  tce: true,

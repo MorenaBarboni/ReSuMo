@@ -34,8 +34,9 @@ These fields specify the path to different artefacts of the System Under Test:
 ##### 3) Mutation Process
 These fields allow to set up the mutation testing process
 
-*  ```skipContracts```:  array of paths to contract files (or contract folders) that must be ignored by ReSuMo during mutation testing
-* ```skipTests```:   array of paths to test files that must be ignored by ReSuMo during regression mutation testing
+* ```skipContracts```:  array of paths to contract files (or contract folders) that must be ignored by ReSuMo during mutation testing
+* ```skipTests```:   array of paths to test files that must not be run by ReSuMo during regression mutation testing
+* ```testUtils```:   array of paths to utility test files that must not be deleted by ReSuMo during regression mutation testing
 * ```ganache```: automatically spawn Ganache instances during the testing process (true by default)
 * ```optimized```: employ operator optimizations (true by default),
 * ```tce```: apply the TCE (true by default). Note that projects that are not Truffle-based currently require a manual instrumentation of the test configuration file. 

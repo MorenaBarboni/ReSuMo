@@ -291,7 +291,7 @@ function test() {
 
       //Compile and test each mutant
       reporter.beginMutationTesting(originalBytecodeMap, mutations)
-      var startTime = Date.now();    
+      var startTime = Date.now();
       for (const file of originalBytecodeMap.keys()) {
         runTest(mutations, originalBytecodeMap, file);
       }
@@ -317,24 +317,52 @@ function test() {
  */
 function resumeSelection() {
   var changedContracts;
-  var changedTest;
-  var originalTest;
+  var changedTests;
+  var originalTests;
   resume.regressionTesting();
 
-    changedContracts = resume.getChangedContracts();
-    changedTest = resume.getChangedTest();
-    originalTest = resume.getOriginalTest();
-    if(changedContracts == 0 && changedTest == 0){
-      process.exit(1);
-    }
+  changedContracts = resume.getChangedContracts();
+  changedTests = resume.getChangedTest();
+  originalTests = resume.getOriginalTest();
+  if (changedContracts == 0 && changedTests == 0) {
+    process.exit(1);
+  }
 
-    for (const singleTest of originalTest) {
-      if (!changedTest.includes(singleTest.path) && !(path.dirname(singleTest.path) === testDir + '/utils' && !(path.dirname(singleTest.path) === testDir + '/json'))) {
-        fs.unlinkSync(singleTest.path);
+  //Delete tests that must not be run
+  for (const originalTest of originalTests) {
+    let deleteTest = false;
+
+    //If the test must be skipped
+    for (const path of config.skipTests) {
+      if (originalTest.path.startsWith(path)) {
+        console.log("Skipped test > "+originalTest.path);
+        deleteTest = true;
+        break;
       }
     }
-    return changedContracts;
+    if (!deleteTest) {
+      //If the test was not selected by ReSuMe
+      if (!changedTests.includes(originalTest.path)) {
+        deleteTest = true;
+      
+        //If the test is an util it will not be deleted
+        if (deleteTest) {
+          for (const path of config.testUtils) {
+            if (originalTest.path.startsWith(path)) {
+              console.log("Util test > "+originalTest.path);
+              deleteTest = false;
+              break;
+            }
+          }
+        }       
+      }
+    }
+    if (deleteTest) {
+      fs.unlinkSync(originalTest.path);
+    }
   }
+  return changedContracts;
+}
 
 function mutationsByHash(mutations) {
   return mutations.reduce((obj, mutation) => {
