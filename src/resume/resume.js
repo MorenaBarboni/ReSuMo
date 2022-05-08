@@ -22,10 +22,9 @@ function ress() {
 
   const dependencyGraph = depCalc.buildDependencyGraph(contracts, tests);
 
-  console.log();
-  console.log("#####################################");
-  console.log("######## PROGRAM DIFFERENCES ########");
-  console.log("#####################################");
+  console.log("=============================================");
+  console.log(chalk.yellow.bold("         Computing File Differences"))
+  console.log("=============================================");
   console.log();
 
   const changedContracts_paths = diffCalc.checkContracts(contracts);
@@ -35,10 +34,12 @@ function ress() {
   logger.logPathsOnConsole("Changed tests", changedTests_paths);
   logger.logProgramDifferences(changedContracts_paths, changedTests_paths);
 
-  console.log("###############################################");
-  console.log("######### REGRESSION MUTATION TESTING #########");
-  console.log("###############################################");
   console.log();
+  console.log("=============================================");
+  console.log(chalk.yellow.bold("     Selecting Contract and Test Files"))
+  console.log("=============================================");
+  console.log();
+
 
   const contracsHaveChanged = changedContracts_paths.length > 0;
   const testsHaveChanged = changedTests_paths.length > 0;
