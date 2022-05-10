@@ -168,7 +168,7 @@ function preflight() {
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun, config.testUtils);
       }else{     
         contractsUnderMutation = defaultContractSelection(files);
-        reporter.printFilesUnderTest(contractsUnderMutation, null);
+        reporter.printFilesUnderTest(contractsUnderMutation, null, null) ;
       }      
       const mutations = generateAllMutations(contractsUnderMutation)
       reporter.preflightSummary(mutations)
@@ -224,7 +224,7 @@ function preTest() {
   ganacheChild = testingInterface.spawnGanache();
   const status = testingInterface.spawnTest(packageManager, testingFramework, runScript);
   if (status === 0) {
-    console.log("Pre-test OK.");
+     console.log("Pre-test OK.");
   } else {
     console.error(chalk.red("Error: Original tests should pass."));
     process.exit(1);
@@ -251,7 +251,7 @@ function test() {
     glob(contractsDir + contractsGlob, (err, files) => {
 
       //Run the pre-test
-      //preTest();
+      preTest();
 
       //Select contracts to mutate and tests to be run
       let changedContracts;
@@ -261,8 +261,10 @@ function test() {
         changedContracts = resumeContractSelection();
         let testsToBeRun = resumeTestSelection();
         unlinkTests(testsToBeRun);
+        reporter.printFilesUnderTest(changedContracts, testsToBeRun, config.testUtils);
       } else {
         changedContracts = files;
+        reporter.printFilesUnderTest(changedContracts, null, null);
       }
 
       //Compile the original contracts and save their bytecode
@@ -295,7 +297,6 @@ function test() {
       }
 
       //Generate the mutations
-      reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       instrumenter.instrumentConfig();
       reporter.setupMutationsReport();
       const mutations = generateAllMutations(contractsToMutate);

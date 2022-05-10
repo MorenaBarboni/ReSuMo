@@ -26,9 +26,10 @@ Reporter.prototype.chalkMutant = function (mutant) {
 };
 
 Reporter.prototype.beginPretest = function (mutant) {
-  console.log("=================");
-  console.log(chalk.yellow.bold("Running pre-test"));
-  console.log("=================");
+  console.log("=============================================");
+  console.log(chalk.yellow.bold("> Running pre-test"));
+  console.log("=============================================");
+
 };
 
 Reporter.prototype.beginBytecode = function (mutant) {
@@ -160,7 +161,7 @@ Reporter.prototype.printFilesUnderTest = function (contracts, tests, testUtils) 
     console.log();
   }
 
-  if (testUtils.length >0) {
+  if (testUtils && testUtils.length >0) {
     const nu = testUtils.length;
       console.log("Tests utils : (" + nu + "):");
 
