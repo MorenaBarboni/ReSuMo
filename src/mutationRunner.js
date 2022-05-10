@@ -324,59 +324,6 @@ function test() {
 }
 
 /**
- * Invokes ReSuMe to select the contracts to mutate the tests to be run
- */
-function resumeSelection() {
-  var changedContracts;
-  var changedTests;
-  var originalTests;
-  resume.regressionTesting();
-
-  changedContracts = resume.getChangedContracts();
-  changedTests = resume.getChangedTest();
-  originalTests = resume.getOriginalTest();
-  if (changedContracts == 0 && changedTests == 0) {
-    process.exit(1);
-  }
-
-  //Delete tests that must not be run
-  for (const originalTest of originalTests) {
-    let deleteTest = false;
-
-    //If the test must be skipped
-    for (const path of config.skipTests) {
-      if (originalTest.path.startsWith(path)) {
-        console.log("Skipped test > " + originalTest.path);
-        deleteTest = true;
-        break;
-      }
-    }
-    if (!deleteTest) {
-      //If the test was not selected by ReSuMe
-      if (!changedTests.includes(originalTest.path)) {
-        deleteTest = true;
-
-        //If the test is an util it will not be deleted
-        if (deleteTest) {
-          for (const path of config.testUtils) {
-            if (originalTest.path.startsWith(path)) {
-              console.log("Util test > " + originalTest.path);
-              deleteTest = false;
-              break;
-            }
-          }
-        }
-      }
-    }
-    if (deleteTest) {
-      fs.unlinkSync(originalTest.path);
-    }
-  }
-  return changedContracts;
-}
-
-
-/**
  * Default selection of contracts to mutate
  * @param files array of paths of all Smart Contracts * 
  */
