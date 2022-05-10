@@ -6,6 +6,8 @@ const mkdirp = require("mkdirp");
 const parser = require("@solidity-parser/parser");
 const { parse } = require("path");
 const chalk = require("chalk");
+const readline = require('readline');
+
 
 //SuMo modules
 const Reporter = require("./reporter");
@@ -152,13 +154,23 @@ function prepare(callback) {
 }
 
 /**
- * Shows a summary of the available mutants without starting the testing process.
+ * Shows a summary of all the mutants without starting the testing process.
  */
 function preflight() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
-      const mutations = generateAllMutations(files)
+      let contractsUnderMutation;
+      if(config.regression){
+        resume.regressionTesting(false);
+        contractsUnderMutation = resumeContractSelection();
+        testsToBeRun = resumeTestSelection();
+        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun, config.testUtils);
+      }else{     
+        contractsUnderMutation = defaultContractSelection(files);
+        reporter.printFilesUnderTest(contractsUnderMutation, null);
+      }      
+      const mutations = generateAllMutations(contractsUnderMutation)
       reporter.preflightSummary(mutations)
       //reporter.preflightToExcel(mutations)
     })
@@ -191,19 +203,13 @@ function generateAllMutations(files) {
   reporter.setupReport();
   let mutations = [];
   var startTime = Date.now();
+  let contractsUnderTest = defaultContractSelection(files);
 
-  for (const file of files) {
-    let ignoreFile = false;
-    for (const path of config.skipContracts) {
-      if (file.startsWith(path))
-        ignoreFile = true;
-    }
-    if (!ignoreFile) {
-      const source = fs.readFileSync(file, "utf8");
-      const ast = parser.parse(source, { range: true });
-      const visit = parser.visit.bind(parser, ast);
-      mutations = mutations.concat(mutGen.getMutations(file, source, visit));
-    }
+  for (const file of contractsUnderTest) {
+    const source = fs.readFileSync(file, "utf8");
+    const ast = parser.parse(source, { range: true });
+    const visit = parser.visit.bind(parser, ast);
+    mutations = mutations.concat(mutGen.getMutations(file, source, visit));
   }
   var generationTime = (Date.now() - startTime) / 1000;
   reporter.saveGenerationTime(mutations.length, generationTime);
@@ -248,9 +254,13 @@ function test() {
       //preTest();
 
       //Select contracts to mutate and tests to be run
-      var changedContracts;
+      let changedContracts;
+
       if (config.regression) {
-        changedContracts = resumeSelection();
+        resume.regressionTesting(true);
+        changedContracts = resumeContractSelection();
+        let testsToBeRun = resumeTestSelection();
+        unlinkTests(testsToBeRun);
       } else {
         changedContracts = files;
       }
@@ -261,8 +271,8 @@ function test() {
       var contractsToMutate = [];
       var check = false;
       for (const changedContract of changedContracts) {
-        for (const ignoreElement of config.skipContracts) {
-          if (ignoreElement !== changedContract) {
+        for (const skipContract of config.skipContracts) {
+          if (skipContract !== changedContract) {
             check = true;
           } else {
             check = false;
@@ -285,12 +295,13 @@ function test() {
       }
 
       //Generate the mutations
+      reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       instrumenter.instrumentConfig();
       reporter.setupMutationsReport();
       const mutations = generateAllMutations(contractsToMutate);
 
       //Compile and test each mutant
-      reporter.beginMutationTesting(originalBytecodeMap, mutations)
+      reporter.beginMutationTesting()
       var startTime = Date.now();
       for (const file of originalBytecodeMap.keys()) {
         runTest(mutations, originalBytecodeMap, file);
@@ -335,7 +346,7 @@ function resumeSelection() {
     //If the test must be skipped
     for (const path of config.skipTests) {
       if (originalTest.path.startsWith(path)) {
-        console.log("Skipped test > "+originalTest.path);
+        console.log("Skipped test > " + originalTest.path);
         deleteTest = true;
         break;
       }
@@ -344,17 +355,17 @@ function resumeSelection() {
       //If the test was not selected by ReSuMe
       if (!changedTests.includes(originalTest.path)) {
         deleteTest = true;
-      
+
         //If the test is an util it will not be deleted
         if (deleteTest) {
           for (const path of config.testUtils) {
             if (originalTest.path.startsWith(path)) {
-              console.log("Util test > "+originalTest.path);
+              console.log("Util test > " + originalTest.path);
               deleteTest = false;
               break;
             }
           }
-        }       
+        }
       }
     }
     if (deleteTest) {
@@ -363,6 +374,136 @@ function resumeSelection() {
   }
   return changedContracts;
 }
+
+
+/**
+ * Default selection of contracts to mutate
+ * @param files array of paths of all Smart Contracts * 
+ */
+function defaultContractSelection(files) {
+  var contractUnderMutation = [];
+
+  for (const file of files) {
+    let skipContract = false;
+    for (const path of config.skipContracts) {
+      if (file.startsWith(path)) {
+        skipContract = true;
+        break;
+      }
+    }
+    if (!skipContract) {
+      contractUnderMutation.push(file)
+    }
+  }
+  return contractUnderMutation;
+}
+
+/**
+ * @returns a list of contracts to be mutated
+ */
+function resumeContractSelection() {
+  let changedContracts = resume.getChangedContracts();
+  let contractsUnderMutation = [];
+
+  for (const file of changedContracts) {
+    let skipContract = false;
+    for (const path of config.skipContracts) {
+      if (file.startsWith(path)) {
+        skipContract = true;
+        break;
+      }
+    }
+    if (!skipContract) {
+      contractsUnderMutation.push(file)
+    }
+  }
+  return contractsUnderMutation;
+}
+
+/**
+ * Regression selection of contracts to mutate
+ * @param overwrite overwrite regression artefacts of previous revision
+ * @returns a list of tests to be run
+ */
+function resumeTestSelection() {
+  let regressionTests = [];
+  let changedTests = resume.getChangedTest();
+  let originalTests = resume.getOriginalTest();
+
+  //Select tests to be run
+  for (const originalTest of originalTests) {
+    let keepTest = false;
+
+    //If the test is an util it will not be deleted
+    for (const path of config.testUtils) {
+      if (originalTest.path.startsWith(path)) {
+        keepTest = true;
+        break;
+      }
+    }
+
+    if (!keepTest) {
+      //If the test was marked as changed by ReSuMe
+      if (changedTests.includes(originalTest.path)) {
+        keepTest = true;
+      }
+      if (keepTest) {
+        //If the test must be skipped
+        for (const path of config.skipTests) {
+          if (originalTest.path.startsWith(path)) {
+            //console.log("Skipped test > " + originalTest.path);
+            keepTest = false;
+            break;
+          }
+        }
+      }
+    }
+    if (keepTest) {
+      regressionTests.push(originalTest.path);
+    }
+  }
+  return regressionTests;
+}
+
+/**
+ * Unliks tests that must not be run
+ * @param regrTests regression tests to be kept
+ * 
+ */
+function unlinkTests(regrTests) {
+  let regressionTests = regrTests;
+  let originalTests = resume.getOriginalTest();
+  for (const originalTest of originalTests) {   
+    if (!regressionTests.includes(originalTest.path)) {
+      fs.unlinkSync(originalTest.path);
+    }
+  }
+}
+
+function regression() {
+  if (!config.regression) {
+    console.error("Regression mutation testing is currently disabled.");
+    process.exit(1);
+  }
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  rl.question("If you run regression mutation testing the '.resume' folder will be overwritten. do yant to proceed? y/n > ", function (response) {
+    response = response.trim()
+    response = response.toLowerCase()
+    if (response === 'y' || response === 'yes') {
+      resume.regressionTesting();
+      rl.close()
+    }
+    else {
+      rl.close()
+    }
+  })
+}
+
 
 function mutationsByHash(mutations) {
   return mutations.reduce((obj, mutation) => {
@@ -541,7 +682,7 @@ function generateTestExcel() {
 
 module.exports = {
   test: test, preflight, preflight, mutate: preflightAndSave, diff: diff, list: list,
-  enable: enableOperator, disable: disableOperator, preTest: preTest, generateExcel: generateTestExcel
+  enable: enableOperator, disable: disableOperator, preTest: preTest, generateExcel: generateTestExcel, resume:regression
 };
 
 

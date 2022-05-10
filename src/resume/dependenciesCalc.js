@@ -170,7 +170,14 @@ function findAndAddDependenciesBetweenTestsAndContracts(
 
 }
 
-function buildDependencyGraph(contracts, tests) {
+/**
+ * Adds contract and test files to the dependency graph
+ * @param contracts contract files
+ * @param tests test files
+ * @param overwrite overwrite old dependencies
+ */
+
+function buildDependencyGraph(contracts, tests, overwrite) {
   var graph = new DepGraph({ circular: true });
 
   contracts.forEach((c) => {
@@ -225,8 +232,9 @@ function buildDependencyGraph(contracts, tests) {
     allDependencies.push(dep);
   });
 
-  fileSys.writeFile(fileSys.types.all_dependencies, allDependencies);
-
+  if (overwrite) {
+    fileSys.writeFile(fileSys.types.all_dependencies, allDependencies);
+  }
   var contractDependencies = [];
   var testDependencies = [];
   allDependencies.forEach((dep) => {
@@ -240,10 +248,10 @@ function buildDependencyGraph(contracts, tests) {
       contractDependencies.push(dep);
     }
   });
-
-  fileSys.writeFile(fileSys.types.contracts_deps, contractDependencies);
-  fileSys.writeFile(fileSys.types.tests_deps, testDependencies);
-
+  if (overwrite) {
+    fileSys.writeFile(fileSys.types.contracts_deps, contractDependencies);
+    fileSys.writeFile(fileSys.types.tests_deps, testDependencies);
+  }
   return graph;
 }
 
