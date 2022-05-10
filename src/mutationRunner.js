@@ -177,15 +177,26 @@ function preflight() {
   );
 }
 
+
 /**
  * Shows a summary of the available mutants without starting the testing process and
  * saves the mutants to file.
  */
-function preflightAndSave() {
+ function preflightAndSave() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
-      const mutations = generateAllMutations(files);
+      let contractsUnderMutation;
+      if(config.regression){
+        resume.regressionTesting(false);
+        contractsUnderMutation = resumeContractSelection();
+        testsToBeRun = resumeTestSelection();
+        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun, config.testUtils);
+      }else{     
+        contractsUnderMutation = defaultContractSelection(files);
+        reporter.printFilesUnderTest(contractsUnderMutation, null, null) ;
+      }     
+      const mutations = generateAllMutations(contractsUnderMutation);
       for (const mutation of mutations) {
         mutation.save();
       }
