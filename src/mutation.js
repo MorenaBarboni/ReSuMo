@@ -69,7 +69,7 @@ Mutation.prototype.restore = function() {
 };
 
 Mutation.prototype.baseline = function() {
-  return baselineDir + this.file.substr(contractsDir.length);
+  return baselineDir+"/contracts" + this.file.substr(contractsDir.length);
 };
 
 Mutation.prototype.diff = function() {

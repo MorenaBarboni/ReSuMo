@@ -7,6 +7,8 @@ const parser = require("@solidity-parser/parser");
 const { parse } = require("path");
 const chalk = require("chalk");
 const readline = require('readline');
+const rimraf = require('rimraf')
+
 
 
 //SuMo modules
@@ -24,7 +26,6 @@ const { report } = require("process");
 const absoluteSumoDir = config.absoluteSumoDir;
 const sumoDir = config.sumoDir;
 const targetDir = config.targetDir;
-const baselineDir = config.baselineDir;
 const contractsDir = config.contractsDir;
 const buildDir = config.buildDir;
 const testDir = config.testDir;
@@ -32,8 +33,8 @@ const liveDir = config.liveDir;
 const killedDir = config.killedDir;
 const mutantsDir = config.mutantsDir;
 const contractsGlob = config.contractsGlob;
-const testConfigGlob = config.testConfigGlob;
-const packageManagerGlob = config.packageManagerGlob;
+const baselineDir = config.baselineDir;
+
 var testingFramework;
 var packageManager;
 var runScript;
@@ -101,56 +102,34 @@ function prepare(callback) {
   }
 
   //Checks the package manager used by the SUT
-  let packageManagerFile;
-  for (const lockFile of packageManagerGlob) {
-    if (fs.existsSync(targetDir + lockFile)) {
-      packageManagerFile = lockFile;
-      if (lockFile.includes("yarn")) {
-        packageManager = "yarn";
-        runScript = "run";
-      } else {
-        packageManager = "npm";
-        runScript = "run-script";
-      }
-      break;
-    }
-  }
+  let pmConfig = utils.getPackageManager()
+  packageManager = pmConfig.packageManager;
+  runScript = pmConfig.runScript;
 
-  if (!packageManagerFile) {
-    console.error("Target project does not contain a suitable lock file.");
-    process.exit(1);
-  }
-
-  //Checks the testing framework used by the SUT
-  let targetConfigFile;
-  for (const configFile of testConfigGlob) {
-    if (fs.existsSync(targetDir + configFile)) {
-      targetConfigFile = configFile;
-      if (configFile.includes("truffle")) {
-        testingFramework = "truffle";
-      } else {
-        testingFramework = "hardhat";
-      }
-      instrumenter.setConfig(targetConfigFile);
-      break;
-    }
-  }
-
-  if (!targetConfigFile) {
-    console.error("Target project does not contain a suitable test configuration file.");
-    process.exit(1);
-  }
+  let config = utils.getTestConfig();
+  instrumenter.setConfig(config.targetConfigFile);
+  testingFramework = config.testingFramework;
 
   mkdirp(liveDir);
   mkdirp(killedDir);
   mkdirp(mutantsDir);
 
+  if (fs.existsSync(baselineDir)) {
+    rimraf(baselineDir, function () {
+      //console.log("Baseline deleted");
+      mkdirp(baselineDir, () =>
+      copy(targetDir + config.targetConfigFile, baselineDir + config.targetConfigFile,
+      copy(testDir, baselineDir + '/test', { dot: true },
+      copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
+    );
+    })
+  }else{
+
   mkdirp(baselineDir, () =>
-    fs.copyFile(targetDir + targetConfigFile, baselineDir + targetConfigFile, (err) => {
-      if (err) throw err;
-    }),
-    copy(contractsDir, baselineDir, { dot: true }, callback)
-  );
+    copy(targetDir + config.targetConfigFile, baselineDir + config.targetConfigFile,
+    copy(testDir, baselineDir + '/test', { dot: true },
+    copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
+  );}
 }
 
 /**
@@ -161,15 +140,15 @@ function preflight() {
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
       let contractsUnderMutation;
-      if(config.regression){
+      if (config.regression) {
         resume.regressionTesting(false);
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun, config.testUtils);
-      }else{     
+      } else {
         contractsUnderMutation = defaultContractSelection(files);
-        reporter.printFilesUnderTest(contractsUnderMutation, null, null) ;
-      }      
+        reporter.printFilesUnderTest(contractsUnderMutation, null, null);
+      }
       const mutations = generateAllMutations(contractsUnderMutation)
       reporter.preflightSummary(mutations)
       //reporter.preflightToExcel(mutations)
@@ -182,20 +161,20 @@ function preflight() {
  * Shows a summary of the available mutants without starting the testing process and
  * saves the mutants to file.
  */
- function preflightAndSave() {
+function preflightAndSave() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
       let contractsUnderMutation;
-      if(config.regression){
+      if (config.regression) {
         resume.regressionTesting(false);
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun, config.testUtils);
-      }else{     
+      } else {
         contractsUnderMutation = defaultContractSelection(files);
-        reporter.printFilesUnderTest(contractsUnderMutation, null, null) ;
-      }     
+        reporter.printFilesUnderTest(contractsUnderMutation, null, null);
+      }
       const mutations = generateAllMutations(contractsUnderMutation);
       for (const mutation of mutations) {
         mutation.save();
@@ -235,7 +214,7 @@ function preTest() {
   ganacheChild = testingInterface.spawnGanache();
   const status = testingInterface.spawnTest(packageManager, testingFramework, runScript);
   if (status === 0) {
-     console.log("Pre-test OK.");
+    console.log("Pre-test OK.");
   } else {
     console.error(chalk.red("Error: Original tests should pass."));
     process.exit(1);
@@ -260,6 +239,7 @@ function exploreDirectories(Directory) {
 function test() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
+      if (err) throw err;
 
       //Run the pre-test
       preTest();
@@ -432,7 +412,7 @@ function resumeTestSelection() {
 function unlinkTests(regrTests) {
   let regressionTests = regrTests;
   let originalTests = resume.getOriginalTest();
-  for (const originalTest of originalTests) {   
+  for (const originalTest of originalTests) {
     if (!regressionTests.includes(originalTest.path)) {
       fs.unlinkSync(originalTest.path);
     }
@@ -641,7 +621,7 @@ function generateTestExcel() {
 
 module.exports = {
   test: test, preflight, preflight, mutate: preflightAndSave, diff: diff, list: list,
-  enable: enableOperator, disable: disableOperator, preTest: preTest, generateExcel: generateTestExcel, resume:regression
+  enable: enableOperator, disable: disableOperator, preTest: preTest, generateExcel: generateTestExcel, resume: regression
 };
 
 
