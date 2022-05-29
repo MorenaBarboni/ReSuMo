@@ -118,18 +118,19 @@ function prepare(callback) {
     rimraf(baselineDir, function () {
       //console.log("Baseline deleted");
       mkdirp(baselineDir, () =>
-      copy(targetDir + config.targetConfigFile, baselineDir + config.targetConfigFile,
-      copy(testDir, baselineDir + '/test', { dot: true },
-      copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
-    );
+        copy(targetDir + config.targetConfigFile, baselineDir + config.targetConfigFile,
+          copy(testDir, baselineDir + '/test', { dot: true },
+            copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
+      );
     })
-  }else{
+  } else {
 
-  mkdirp(baselineDir, () =>
-    copy(targetDir + config.targetConfigFile, baselineDir + config.targetConfigFile,
-    copy(testDir, baselineDir + '/test', { dot: true },
-    copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
-  );}
+    mkdirp(baselineDir, () =>
+      copy(targetDir + config.targetConfigFile, baselineDir + config.targetConfigFile,
+        copy(testDir, baselineDir + '/test', { dot: true },
+          copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
+    );
+  }
 }
 
 /**
@@ -548,7 +549,9 @@ function runTest(mutations, originalBytecodeMap, file) {
         }
         if (mutation.status !== "redundant" && mutation.status !== "equivalent") {
           reporter.beginTest(mutation);
+          let startTestTime = Date.now();
           const result = testingInterface.spawnTest(packageManager, testingFramework, runScript);
+          mutation.testingTime = Date.now() - startTestTime;
           if (result === 0) {
             mutation.status = "live";
           } else if (result === 999) {
@@ -567,7 +570,6 @@ function runTest(mutations, originalBytecodeMap, file) {
       mutation.restore();
       testingInterface.killGanache();
       utils.cleanTmp();
-      mutation.time = Date.now() - startTime;
     }
   }
   bytecodeMutantsMap.clear();

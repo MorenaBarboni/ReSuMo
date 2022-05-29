@@ -288,7 +288,7 @@ Reporter.prototype.testSummary = function () {
 };
 
 //Setup test report
-Reporter.prototype.setupReport = function (mutationsLength, generationTime) {
+Reporter.prototype.setupReport = function () {
   fs.writeFileSync(".sumo/report.txt", "################################################ REPORT ################################################\n\n------------------------------------------- GENERATED MUTANTS ------------------------------------------ \n", function (err) {
     if (err) return console.log(err);
   });
@@ -433,7 +433,7 @@ Reporter.prototype.saveOperatorsResults = function () {
     .style(headerStyle);
 
   worksheet.cell(1, 11)
-    .string("time")
+    .string("Testing Time")
     .style(headerStyle);
   for (var i = 0; i < this.operators.length; i++) {
     worksheet.cell(i + 2, 1)
@@ -460,12 +460,12 @@ Reporter.prototype.saveOperatorsResults = function () {
     var operatorTimedout = this.timedout.filter(mutant => mutant.operator === operators[i][0]);
     this.killed.filter(mutant => {
       if (mutant.operator === operators[i][0]) {
-        time = time + mutant.time
+        time = time + mutant.testingTime
       }
     })
     this.survived.filter(mutant => {
       if (mutant.operator === operators[i][0]) {
-        time = time + mutant.time
+        time = time + mutant.testingTime
       }
     })
     worksheet.cell(i + 2, 2)
