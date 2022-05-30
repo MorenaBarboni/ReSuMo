@@ -212,16 +212,16 @@ function generateAllMutations(files) {
  */
 function preTest() {
   reporter.beginPretest();
-  ganacheChild = testingInterface.spawnGanache();
+  let ganacheChild = testingInterface.spawnGanache();
   const status = testingInterface.spawnTest(packageManager, testingFramework, runScript);
   if (status === 0) {
     console.log("Pre-test OK.");
   } else {
+    testingInterface.killGanache(ganacheChild);
     console.error(chalk.red("Error: Original tests should pass."));
     process.exit(1);
   }
-  testingInterface.killGanache();
-  utils.cleanTmp();
+  testingInterface.killGanache(ganacheChild);
 }
 
 function exploreDirectories(Directory) {
@@ -538,8 +538,7 @@ function runTest(mutations, originalBytecodeMap, file) {
   const bytecodeMutantsMap = new Map();
   for (const mutation of mutations) {
     if ((mutation.file.substring(mutation.file.lastIndexOf("/") + 1)) === (file + ".sol")) {
-      var startTime = Date.now()
-      ganacheChild = testingInterface.spawnGanache();
+      let ganacheChild = testingInterface.spawnGanache();
       mutation.apply();
       reporter.beginCompile(mutation);
       const isCompiled = testingInterface.spawnCompile(packageManager, testingFramework, runScript);
@@ -568,8 +567,7 @@ function runTest(mutations, originalBytecodeMap, file) {
       }
       reporter.mutantStatus(mutation);
       mutation.restore();
-      testingInterface.killGanache();
-      utils.cleanTmp();
+      testingInterface.killGanache(ganacheChild);
     }
   }
   bytecodeMutantsMap.clear();

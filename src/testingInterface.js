@@ -1,5 +1,6 @@
 const { spawnSync, spawn } = require("child_process");
 const config = require("./config");
+const utils = require("./utils");
 const targetDir = config.targetDir;
 const testingTimeOutInSec=config.testingTimeOutInSec
 
@@ -122,7 +123,7 @@ function spawnGanache() {
 /**
  * Kills a spawned Ganache instance
  */
-function killGanache() {
+function killGanache(ganacheChild) {
     if (config.ganache) {
       if (process.platform === "win32") {
         spawn("taskkill", ["/pid", ganacheChild.pid, "/f", "/t"]);
@@ -131,6 +132,7 @@ function killGanache() {
       } else if (process.platform === "darwin") {
         ganacheChild.kill("SIGHUP");
       }
+      utils.cleanTmp();
     }
   }
 
