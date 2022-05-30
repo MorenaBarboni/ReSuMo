@@ -1,5 +1,6 @@
 const { spawnSync, spawn } = require("child_process");
 const config = require("./config");
+const utils = require("./utils");
 const targetDir = config.targetDir;
 const testingTimeOutInSec=config.testingTimeOutInSec
 
@@ -21,22 +22,14 @@ function spawnCompile(packageManager, testingFramework, runScript) {
           stdio: "inherit",
           cwd: targetDir
         });
-      } else if (process.platform === "linux") {
-        compileChild = spawnSync(packageManager, [runScript, "compile"], { stdio: "inherit", cwd: targetDir });
-      } else if (process.platform === "darwin") {
-        compileChild = spawnSync(packageManager, [runScript, "compile"], { stdio: "inherit", cwd: targetDir });
-      } else if (process.platform === "darwin") {
+      } else if (process.platform === "linux" || process.platform === "darwin") {
         compileChild = spawnSync(packageManager, [runScript, "compile"], { stdio: "inherit", cwd: targetDir });
       }
     }   //Spawn a default compile script
     else {
       if (process.platform === "win32") {
         compileChild = spawnSync(testingFramework + ".cmd", ["compile"], { stdio: "inherit", cwd: targetDir });
-      } else if (process.platform === "linux") {
-        compileChild = spawnSync(testingFramework, ["compile"], { stdio: "inherit", cwd: targetDir });
-      } else if (process.platform === "darwin") {
-        compileChild = spawnSync(testingFramework, ["compile"], { stdio: "inherit", cwd: targetDir });
-      } else if (process.platform === "darwin") {
+      } else if (process.platform === "linux" || process.platform === "darwin") {
         compileChild = spawnSync(testingFramework, ["compile"], { stdio: "inherit", cwd: targetDir });
       }
     }
@@ -86,9 +79,7 @@ function spawnCompile(packageManager, testingFramework, runScript) {
     else {
       if (process.platform === "win32") {
         testChild = spawnSync(testingFramework + ".cmd", ["test"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
-      } else if (process.platform === "linux") {
-        testChild = spawnSync(testingFramework, ["test"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
-      } else if (process.platform === "darwin") {
+      } else if (process.platform === "linux" || process.platform === "darwin") {
         testChild = spawnSync(testingFramework, ["test"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
       }
     }
@@ -111,9 +102,7 @@ function spawnGanache() {
     if (config.ganache) {
       if (process.platform === "win32") {
         child = spawn("ganache-cli.cmd", { stdio: "inherit", cwd: targetDir, detached: true });
-      } else if (process.platform === "linux") {
-        child = spawn("ganache-cli", { stdio: "inherit", cwd: targetDir, detached: true });
-      } else if (process.platform === "darwin") {
+      } else if (process.platform === "linux" || process.platform === "darwin") {
         child = spawn("ganache-cli", { stdio: "inherit", cwd: targetDir, detached: true });
       }
       child.unref;
@@ -134,7 +123,7 @@ function spawnGanache() {
 /**
  * Kills a spawned Ganache instance
  */
-function killGanache() {
+function killGanache(ganacheChild) {
     if (config.ganache) {
       if (process.platform === "win32") {
         spawn("taskkill", ["/pid", ganacheChild.pid, "/f", "/t"]);
@@ -143,6 +132,7 @@ function killGanache() {
       } else if (process.platform === "darwin") {
         ganacheChild.kill("SIGHUP");
       }
+      utils.cleanTmp();
     }
   }
 

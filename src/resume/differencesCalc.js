@@ -3,7 +3,13 @@ const path = require("path");
 const checksum = require("checksum");
 const fileSys = require("./utils/fileSys");
 
-function checkContracts(contracts) {
+
+/**
+ * Calculates contract differences
+ * @param contracts new contract files
+ * @param overwrite overwrite file checksum
+ */
+function checkContracts(contracts, overwrite) {
   var oldChecksumsExists = fileSys.existsContractsChecksums();
   var oldFilesChecksums;
   if (oldChecksumsExists) oldFilesChecksums = fileSys.loadContractsChecksums();
@@ -26,8 +32,9 @@ function checkContracts(contracts) {
     newFilesChecksums.push(current);
   });
 
+  if(overwrite){
   fileSys.writeFile(fileSys.types.contracts_checksums, newFilesChecksums);
-
+  }
   var changedFiles_paths = [];
   newFilesChecksums.forEach((element) => {
     if (element.checksum !== element.lastChecksum)
@@ -40,7 +47,12 @@ function checkContracts(contracts) {
   return changedFiles_paths;
 }
 
-function checkTests(tests) {
+/**
+ * Calculates test differences
+ * @param tests new test files
+ * @param overwrite overwrite file checksum
+ */
+function checkTests(tests, overwrite) {
   var oldChecksumsExists = fileSys.existsTestsChecksums();
   var oldFilesChecksums;
   if (oldChecksumsExists) oldFilesChecksums = fileSys.loadTestsChecksums();
@@ -61,8 +73,9 @@ function checkTests(tests) {
     newFilesChecksums.push(current);
   });
 
+  if(overwrite){
   fileSys.writeFile(fileSys.types.tests_checksums, newFilesChecksums);
-
+  }
   var changedFiles_paths = [];
   newFilesChecksums.forEach((element) => {
     if (element.checksum !== element.lastChecksum)

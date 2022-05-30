@@ -22,9 +22,10 @@ const loadTestsDirGlob = config_testsDir + config.testsGlob;
 const loadMutationOperatorsFile = config.mutationOpConfig;
 
 const resumeDir = config.resumeDir;
+const sumoDir = config.sumoDir;
 const report = path.join(resumeDir, "report.txt");
 
-const baselineDir = path.join(resumeDir, "baseline");
+const baselineDir = path.join(sumoDir, "baseline");
 const contracts_baseline = path.join(baselineDir, "contracts");
 const tests_baseline = path.join(baselineDir, "tests");
 const mutation_baseline = path.join(baselineDir, "mutation");
@@ -56,7 +57,7 @@ function createAmbient() {
     process.exit(0);
   }
 
-  console.log("Project dir: " + config.targetDir);
+  //console.log("Project dir: " + config.targetDir);
 
   if (!fs.existsSync(resumeDir)) fs.mkdirSync(resumeDir);
   fs.createFileSync(report);
@@ -75,10 +76,10 @@ function createAmbient() {
   if (!fs.existsSync(checksumsDir))
     fs.mkdirSync(checksumsDir);
 
-  if (!fs.existsSync(baselineDir))
-    fs.mkdirSync(baselineDir);
-  else
-    fs.emptyDirSync(baselineDir);
+  //if (!fs.existsSync(baselineDir))
+   // fs.mkdirSync(baselineDir);
+  //else
+   // fs.emptyDirSync(baselineDir);
 
   //if (!fs.existsSync(mutation_baseline)) fs.mkdirSync(mutation_baseline);
 }
@@ -170,17 +171,17 @@ function loadCurrentMatrixFile() {
   return fs.readFileSync(config.currentMatrixPath);
 }
 
-function copyContractsToBaseline() {
+/*function copyContractsToBaseline() {
   fs.copySync(config_contractsDir, contracts_baseline);
-}
+}*/
 
-function copyTestsToBaseline() {
+/*function copyTestsToBaseline() {
   var p = path.isAbsolute(config_testsDir)
     ? config_testsDir
     : path.resolve("ReSuMe", config_testsDir);
   fs.copySync(p, tests_baseline);
 
-}
+}*/
 
 
 function copyMutationOpertatorsToBaseline() {
@@ -199,8 +200,8 @@ module.exports = {
   loadMutationOperatorsFile: loadMutationOperatorsFile,
   loadPreviousMatrixFile: loadPreviousMatrixFile,
   loadCurrentMatrixFile: loadCurrentMatrixFile,
-  copyContractsToBaseline: copyContractsToBaseline,
-  copyTestsToBaseline: copyTestsToBaseline,
+  //copyContractsToBaseline: copyContractsToBaseline,
+  //copyTestsToBaseline: copyTestsToBaseline,
   copyMutationOpertatorsToBaseline: copyMutationOpertatorsToBaseline,
   existsContractsChecksums: existsContractsChecksums,
   loadContractsChecksums: loadContractsChecksums,

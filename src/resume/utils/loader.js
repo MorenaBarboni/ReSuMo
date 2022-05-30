@@ -9,7 +9,7 @@ const config = require("../../config");
 const { factory } = require("typescript");
 
 function loadTests() {
-  fileSys.copyTestsToBaseline();
+//  fileSys.copyTestsToBaseline();
 
   if (!fs.existsSync(fileSys.loadTestsDir)) {
     console.log("Tests directory does not exits!");
@@ -184,7 +184,7 @@ function loadTests() {
 
 
 function loadContracts() {
-  fileSys.copyContractsToBaseline();
+//  fileSys.copyContractsToBaseline();
 
   if (!fs.existsSync(fileSys.loadContractsDir)) {
     console.log("Contracts directory does not exits!");

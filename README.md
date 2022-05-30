@@ -1,4 +1,4 @@
-# ReSuMO
+# ReSuMo
 
 ReSuMo is a mutation testing tool for Solidity Smart Contracts. 
 
@@ -88,55 +88,60 @@ To start the GUI:
 
 ReSuMo inherits the mutation operators implemented by [SuMo](https://github.com/MorenaBarboni/SuMo-SOlidity-MUtator).
 
+SuMo includes currently 25 Solidity-specific operators and 19 general operators, some of which foresee an Optimized version.
+
+* The standard, **Non-Optimized** operators include extended mutation rules capable of generating a more comprehensive collection of mutants. The Non-Opt operators guarantee higher reliability at the price of a more expensive and time-consuming mutation testing process. 
+* The **Optimized** operators consist of simplified rules to limit the generation of likely subsumed mutants and speed up the testing process.
+
+
 ### Traditional Operators
-| Operator | Description |
-| ------ | ------ |
-| ACM| Argument Change of overloaded Method call |
-| AOR | Assignment Operator Replacement |
-| BCRD | Break and Continue Replacement and Deletion |
-| BLR | Boolean Literal Replacement |
-| BOR | Binary Operator Insertion |
-| CBD | Catch Block Deletion |
-| CSC | Conditional Statement Change |
-| ER | Enum Replacemet |
-| ECS | Explicit Conversion to Smaller type |
-| HLR | Hexadecimal Literal Replacement |
-| ICM | Increments Mirror |
-| ILR | Integer Literal Replacement |
-| LCS | Loop Statement Change |
-| OLFD | Overloaded Function Deletion |
-| ORFD | Overridden Function Deletion |
-| SKI | Super Keyword Insertion |
-| SKD | Super Keyword Deletion |
-| SLR | String Literal Replacement |
-| UORD | Unary Operator Replacement and Deletion |
+| Operator | Description | Optimization Available |
+| ------ | ------ | :----: |
+| ACM| Argument Change of overloaded Method call | N |
+| AOR | Assignment Operator Replacement | Y |
+| BCRD | Break and Continue Replacement and Deletion | N |
+| BLR | Boolean Literal Replacement | N |
+| BOR | Binary Operator Insertion | Y |
+| CBD | Catch Block Deletion | N |
+| CSC | Conditional Statement Change | N |
+| ER | Enum Replacemet | Y |
+| ECS | Explicit Conversion to Smaller type | N |
+| HLR | Hexadecimal Literal Replacement | N |
+| ICM | Increments Mirror | N |
+| ILR | Integer Literal Replacement | N |
+| LCS | Loop Statement Change | N |
+| OLFD | Overloaded Function Deletion | N |
+| ORFD | Overridden Function Deletion | N |
+| SKI | Super Keyword Insertion | N |
+| SKD | Super Keyword Deletion | N |
+| SLR | String Literal Replacement | N |
+| UORD | Unary Operator Replacement and Deletion | N |
 
 ### Solidity Operators
-|Operator | Description |
-| ------ | ------ |
-| AVR | Address Value Replacement |
-| CSC | Contract Constructor Deletion |
-| DLR | Data Location Keyword Replacement |
-| DOD | Delete Operator Deletion |
-| ETR | Ether Transfer function Replacement |
-| EED |  Event Emission Deletion |
-| EHC | Exception Handling Change |
-| FVR | Function Visibility Replacement |
-| GVR | Global Variable Replacement |
-| MCR | Mathematical and Cryptographic function Replacement |
-| MOD | Modifier Deletion |
-| MOI | Modifier Insertion |
-| MOC | Modifier Order Change |
-| MOC | Modifier Order Change |
-| MOR | Modifier Replacement |
-| PKD | Payable Keyword Deletion |
-| RSD | Return Statement Deletion |
-| RVS | Return Values Swap |
-| SFD | Selfdestruct Deletion |
-| SFI | Selfdestruct Insertion |
-| SFR | SafeMath Function Replacement |
-| SCEC | Switch Call Expression Casting |
-| TOR | Transaction Origin Replacement |
-| VUR | Variable Unit Replacement |
-| VVR | Variable Visibility Replacement |
-
+|Operator | Description | Optimization Available |
+| ------ | ------ | :----: |
+| AVR | Address Value Replacement | N |
+| CSC | Contract Constructor Deletion | N |
+| DLR | Data Location Keyword Replacement | N |
+| DOD | Delete Operator Deletion | N |
+| ETR | Ether Transfer function Replacement | N |
+| EED |  Event Emission Deletion | N |
+| EHC | Exception Handling Change | N |
+| FVR | Function Visibility Replacement | Y |
+| GVR | Global Variable Replacement | Y |
+| MCR | Mathematical and Cryptographic function Replacement | N |
+| MOD | Modifier Deletion | N |
+| MOI | Modifier Insertion | N |
+| MOC | Modifier Order Change | N |
+| MOC | Modifier Order Change | N |
+| MOR | Modifier Replacement | N |
+| PKD | Payable Keyword Deletion | N |
+| RSD | Return Statement Deletion | N |
+| RVS | Return Values Swap | Y |
+| SFD | Selfdestruct Deletion | N |
+| SFI | Selfdestruct Insertion | N |
+| SFR | SafeMath Function Replacement | Y |
+| SCEC | Switch Call Expression Casting | N |
+| TOR | Transaction Origin Replacement | N |
+| VUR | Variable Unit Replacement | Y |
+| VVR | Variable Visibility Replacement | Y |

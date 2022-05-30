@@ -13,7 +13,7 @@ function splice(str, start, length, replacement) {
   return str.substring(0, start) + replacement + str.substring(start + length);
 }
 
-function Mutation(file, start, end, replace, operator, status = null, killers = [], nonKillers = [], bytecode, time=null) {
+function Mutation(file, start, end, replace, operator, status = null, killers = [], nonKillers = [], bytecode, testingTime=null) {
   this.file = file;
   this.start = start;
   this.end = end;
@@ -21,6 +21,7 @@ function Mutation(file, start, end, replace, operator, status = null, killers = 
   this.operator = operator;
   this.status = status;
   this.bytecode = bytecode;
+  this.testingTime = testingTime
 }
 
 Mutation.prototype.hash = function() {
@@ -69,7 +70,7 @@ Mutation.prototype.restore = function() {
 };
 
 Mutation.prototype.baseline = function() {
-  return baselineDir + this.file.substr(contractsDir.length);
+  return baselineDir+"/contracts" + this.file.substr(contractsDir.length);
 };
 
 Mutation.prototype.diff = function() {

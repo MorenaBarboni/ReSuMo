@@ -21,40 +21,48 @@ function Reporter() {
   this.timedout = [];
 }
 
-Reporter.prototype.chalkMutant = function(mutant) {
-  return chalk.rgb(186,85,211)(mutant.hash());
+Reporter.prototype.chalkMutant = function (mutant) {
+  return chalk.rgb(186, 85, 211)(mutant.hash());
 };
 
-Reporter.prototype.beginMutationTesting = function(originalBytecodeMap, mutations) {
-  console.log("=====================================");
-  console.log(chalk.yellow.bold("👾 Starting Mutation Testing 👾"))
-  console.log(" - Contracts to be mutated: " + originalBytecodeMap.size);
-  console.log(" - Mutants under test: " + mutations.length);
-  console.log("=====================================");
+Reporter.prototype.beginPretest = function (mutant) {
+  console.log("=============================================");
+  console.log(chalk.yellow.bold("> Running pre-test"));
+  console.log("=============================================");
+
 };
 
-Reporter.prototype.beginPretest = function(mutant) {
-  console.log("=================");
-  console.log(chalk.yellow.bold("Running pre-test"));
-  console.log("=================");
+Reporter.prototype.beginBytecode = function (mutant) {
+  console.log("=============================================");
+  console.log(chalk.yellow.bold("      Preparing Mutation Testing"));
+  console.log("=============================================");
+
 };
 
-Reporter.prototype.beginTest = function(mutant) {
+Reporter.prototype.beginMutationTesting = function () {
+  console.log("=============================================");
+  console.log(chalk.yellow.bold(" >  👾 Starting Mutation Testing 👾"))
+  console.log("============================================="); 
+};
+
+
+
+Reporter.prototype.beginTest = function (mutant) {
 
   console.log("Mutant successfully compiled.");
 
   const hash = mutant.hash();
 
-  console.log("Applying mutation " +  this.chalkMutant(mutant) + " to " + mutant.file);
+  console.log("Applying mutation " + this.chalkMutant(mutant) + " to " + mutant.file);
   process.stdout.write(mutant.diff());
   console.log("\n ");
   console.log(chalk.yellow("Running tests ") + "for mutation " + this.chalkMutant(mutant));
 };
 
-Reporter.prototype.beginCompile = function(mutant) {
+Reporter.prototype.beginCompile = function (mutant) {
   const hash = mutant.hash();
   console.log("\n ");
-  console.log("\n " + chalk.yellow("Compiling mutation ") +  this.chalkMutant(mutant) + " of " + mutant.file);
+  console.log("\n " + chalk.yellow("Compiling mutation ") + this.chalkMutant(mutant) + " of " + mutant.file);
 };
 
 
@@ -65,14 +73,14 @@ Reporter.prototype.mutantStatus = function (mutant) {
     case "killed":
       this.killed.push(mutant);
       console.log("Mutant " + this.chalkMutant(mutant) + " was killed by tests.");
-      fs.writeFileSync(killedDir + "/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function(err) {
+      fs.writeFileSync(killedDir + "/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
         if (err) return console.log(err);
       });
       break;
     case "live":
       this.survived.push(mutant);
       console.log("Mutant " + this.chalkMutant(mutant) + " survived testing.");
-      fs.writeFileSync(liveDir + "/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function(err) {
+      fs.writeFileSync(liveDir + "/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
         if (err) return console.log(err);
       });
       break;
@@ -102,16 +110,71 @@ Reporter.prototype.mutantStatus = function (mutant) {
 };
 
 //Prints preflight summary to console
-Reporter.prototype.preflightSummary = function(mutations) {
-  console.log("---------------------------------");
-  console.log(chalk.yellow.bold("Preflight: ") + mutations.length + " mutation(s) found. ");
-  console.log("--------------------------------");
+Reporter.prototype.preflightSummary = function (mutations) {
+  console.log("=============================================");
+  console.log(chalk.yellow.bold("> Preflight: ") + mutations.length + " mutation(s) found. ");
+  console.log("=============================================");
 
   for (const mutation of mutations) {
     console.log(mutation.file + ":" + mutation.hash() + ":");
     process.stdout.write(mutation.diff());
   }
 };
+
+
+Reporter.prototype.printFilesUnderTest = function (contracts, tests, testUtils) {
+  const nc = contracts.length;
+  console.log();
+  console.log("=============================================");
+  console.log(chalk.yellow.bold("> Selecting Contract and Test Files"))
+  console.log("=============================================");
+  console.log();
+
+  if (nc == 0) console.log("Contracts to be mutated : " + chalk.green("none"));
+  else {
+    console.log("Contracts to be mutated : (" + nc + "):");
+
+    contracts.forEach((c) => {
+      console.log(
+        "\t" + path.parse(c).dir + "/" + chalk.bold(path.basename(c))
+      );
+    });
+  }
+  console.log();
+
+  if (!tests) {
+    console.log("Tests to be run : " + chalk.green("all"));
+    console.log();
+  }
+  else {
+    const nt = tests.length;
+    if (nt == 0) console.log("Tests to be run : " + chalk.green("none"));
+    else {
+      console.log("Tests to be run : (" + nt + "):");
+
+      tests.forEach((t) => {
+        console.log(
+          "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
+        );
+      });
+    }
+    console.log();
+  }
+
+  if (testUtils && testUtils.length >0) {
+    const nu = testUtils.length;
+      console.log("Tests utils : (" + nu + "):");
+
+      testUtils.forEach((t) => {
+        console.log(
+          "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
+        );
+      });
+    
+    console.log();
+  }
+}
+
 
 //Save mutations info to excel file
 Reporter.prototype.preflightToExcel = function (mutations) {
@@ -165,29 +228,29 @@ Reporter.prototype.preflightToExcel = function (mutations) {
   });
 
   //Retrieve list of mutations
-  for(var i = 0; i < mutations.length; i ++){
+  for (var i = 0; i < mutations.length; i++) {
 
-    worksheet.cell(i+2, 1)
+    worksheet.cell(i + 2, 1)
       .string(mutations[i].operator)
       .style(style);
 
-    worksheet.cell(i+2, 2)
+    worksheet.cell(i + 2, 2)
       .string(mutations[i].hash())
       .style(style);
 
-    worksheet.cell(i+2, 3)
+    worksheet.cell(i + 2, 3)
       .string(mutations[i].file)
       .style(style);
 
-    worksheet.cell(i+2, 4)
+    worksheet.cell(i + 2, 4)
       .number(mutations[i].start)
       .style(style);
 
-    worksheet.cell(i+2, 5)
+    worksheet.cell(i + 2, 5)
       .number(mutations[i].end)
       .style(style);
 
-    worksheet.cell(i+2, 6)
+    worksheet.cell(i + 2, 6)
       .string(mutations[i].replace)
       .style(style);
 
@@ -200,9 +263,9 @@ Reporter.prototype.preflightToExcel = function (mutations) {
 //Prints test summary to console
 Reporter.prototype.testSummary = function () {
   console.log('\n')
-  console.log('==============')
-  console.log(chalk.yellow.bold("Test Summary"))
-  console.log('==============')
+  console.log("=============================================");
+  console.log(chalk.yellow.bold(" > Test Summary"))
+  console.log("=============================================");
   console.log(
     "• " + this.survived.length +
     " mutants survived testing.\n" +
@@ -225,29 +288,29 @@ Reporter.prototype.testSummary = function () {
 };
 
 //Setup test report
-Reporter.prototype.setupReport = function(mutationsLength, generationTime) {
-  fs.writeFileSync(".sumo/report.txt", "################################################ REPORT ################################################\n\n------------------------------------------- GENERATED MUTANTS ------------------------------------------ \n", function(err) {
+Reporter.prototype.setupReport = function () {
+  fs.writeFileSync(".sumo/report.txt", "################################################ REPORT ################################################\n\n------------------------------------------- GENERATED MUTANTS ------------------------------------------ \n", function (err) {
     if (err) return console.log(err);
   });
 };
 
 //Save generated mutations to report
-Reporter.prototype.saveGeneratedMutants = function(fileString, mutantString) {
+Reporter.prototype.saveGeneratedMutants = function (fileString, mutantString) {
 
-  fs.appendFileSync(".sumo/report.txt", fileString + mutantString, { "flags": "a" }, function(err) {
+  fs.appendFileSync(".sumo/report.txt", fileString + mutantString, { "flags": "a" }, function (err) {
     if (err) return console.log(err);
   });
 };
 
 //Save mutants generation time to report
-Reporter.prototype.saveGenerationTime = function(mutationsLength, generationTime) {
-  fs.appendFileSync(".sumo/report.txt", "\n" + mutationsLength + " mutant(s) found in " + generationTime + " seconds. \n", function(err) {
+Reporter.prototype.saveGenerationTime = function (mutationsLength, generationTime) {
+  fs.appendFileSync(".sumo/report.txt", "\n" + mutationsLength + " mutant(s) found in " + generationTime + " seconds. \n", function (err) {
     if (err) return console.log(err);
   });
 };
 
 //Save test results to report
-Reporter.prototype.printTestReport = function(time) {
+Reporter.prototype.printTestReport = function (time) {
   const validMutants = this.survived.length + this.killed.length;
   const stillbornMutants = this.stillborn.length;
   const equivalentMutants = this.equivalent.length;
@@ -287,13 +350,13 @@ Reporter.prototype.printTestReport = function(time) {
 
   printString = printString + "\n\n Mutation Score = " + mutationScore;
 
-  fs.appendFileSync(".sumo/report.txt", printString, { "flags": "a" }, function(err) {
+  fs.appendFileSync(".sumo/report.txt", printString, { "flags": "a" }, function (err) {
     if (err) return console.log(err);
   });
 };
 
-Reporter.prototype.setupMutationsReport = function() {
-  fs.writeFileSync(sumoDir + "/mutations.json", "", "utf8", function(err) {
+Reporter.prototype.setupMutationsReport = function () {
+  fs.writeFileSync(sumoDir + "/mutations.json", "", "utf8", function (err) {
     if (err) {
       return console.log(err);
     }
@@ -301,7 +364,7 @@ Reporter.prototype.setupMutationsReport = function() {
 };
 
 /*Saves results for each operator to operators.xlsx */
-Reporter.prototype.saveOperatorsResults = function() {
+Reporter.prototype.saveOperatorsResults = function () {
 
   var workbook = new excel.Workbook
   var worksheet = workbook.addWorksheet("Sheet 1");
@@ -357,11 +420,11 @@ Reporter.prototype.saveOperatorsResults = function() {
     .string("Live")
     .style(headerStyle);
 
-  worksheet.cell(1,8)
+  worksheet.cell(1, 8)
     .string("Timedout")
     .style(headerStyle)
 
-  worksheet.cell(1,9)
+  worksheet.cell(1, 9)
     .string("Stillborn")
     .style(headerStyle)
 
@@ -370,7 +433,7 @@ Reporter.prototype.saveOperatorsResults = function() {
     .style(headerStyle);
 
   worksheet.cell(1, 11)
-    .string("time")
+    .string("Testing Time")
     .style(headerStyle);
   for (var i = 0; i < this.operators.length; i++) {
     worksheet.cell(i + 2, 1)
@@ -388,19 +451,23 @@ Reporter.prototype.saveOperatorsResults = function() {
   //Retrieve list of killed mutants for each operator
   var operators = Object.entries(operatorsConfig);
   for (var i = 0; i < operators.length; i++) {
-    var time=0
+    var time = 0
     var operatorKilled = this.killed.filter(mutant => mutant.operator === operators[i][0]);
     var operatorLive = this.survived.filter(mutant => mutant.operator === operators[i][0]);
     var operatorStillborn = this.stillborn.filter(mutant => mutant.operator === operators[i][0]);
     var operatorEquivalent = this.equivalent.filter(mutant => mutant.operator === operators[i][0]);
     var operatorRedundant = this.redundant.filter(mutant => mutant.operator === operators[i][0]);
     var operatorTimedout = this.timedout.filter(mutant => mutant.operator === operators[i][0]);
-    this.killed.filter(mutant=> {if(mutant.operator===operators[i][0]){
-      time=time+mutant.time
-    }})
-    this.survived.filter(mutant=> {if(mutant.operator===operators[i][0]){
-      time=time+mutant.time
-    }})
+    this.killed.filter(mutant => {
+      if (mutant.operator === operators[i][0]) {
+        time = time + mutant.testingTime
+      }
+    })
+    this.survived.filter(mutant => {
+      if (mutant.operator === operators[i][0]) {
+        time = time + mutant.testingTime
+      }
+    })
     worksheet.cell(i + 2, 2)
       .number(operatorKilled.length + operatorLive.length + operatorEquivalent.length + operatorRedundant.length + operatorTimedout.length + operatorStillborn.length)
       .style(style);
@@ -440,13 +507,13 @@ Reporter.prototype.saveOperatorsResults = function() {
         .style(style);
     }
     worksheet.cell(i + 2, 11)
-      .number(time/60000)
+      .number(time / 60000)
       .style(style)
     workbook.write("./.sumo/operators.xlsx");
   }
 };
 
-Reporter.prototype.saveTestData=function () {
+Reporter.prototype.saveTestData = function () {
   var workbook = new excel.Workbook
   var worksheet = workbook.addWorksheet("Sheet 1");
   var headerStyle = workbook.createStyle({
@@ -466,7 +533,8 @@ Reporter.prototype.saveTestData=function () {
     font: {
       color: "#000000",
       size: 12
-    }});
+    }
+  });
   var stylePassed = workbook.createStyle({
     font: {
       color: "#000000",
@@ -475,52 +543,52 @@ Reporter.prototype.saveTestData=function () {
     fill: {
       type: "pattern",
       patternType: "solid",
-      bgColor:"#67cc5d",
+      bgColor: "#67cc5d",
       fgColor: "#67cc5d"
     },
-    border:{
-      top:{style:'thin'},
-      bottom:{style:'thin'},
-      left:{style:'thin'},
-      right:{style:'thin'},
+    border: {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' },
     }
   });
   var styleFailed = workbook.createStyle({
     font: {
       color: "#000000",
       size: 12,
-      bold:false
+      bold: false
     },
     fill: {
       type: "pattern",
       patternType: "solid",
-      bgColor:"#e73748",
+      bgColor: "#e73748",
       fgColor: "#e73748"
     },
-    border:{
-      top:{style:'thin'},
-      bottom:{style:'thin'},
-      left:{style:'thin'},
-      right:{style:'thin'},
+    border: {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' },
     }
   });
   var styleNull = workbook.createStyle({
     font: {
       color: "#000000",
       size: 12,
-      bold:true
+      bold: true
     },
     fill: {
       type: "pattern",
       patternType: "solid",
-      bgColor:"#8d45ad",
+      bgColor: "#8d45ad",
       fgColor: "#8d45ad"
     },
-    border:{
-      top:{style:'thin'},
-      bottom:{style:'thin'},
-      left:{style:'thin'},
-      right:{style:'thin'},
+    border: {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' },
     }
   });
   worksheet.cell(4, 1)
@@ -532,14 +600,14 @@ Reporter.prototype.saveTestData=function () {
   worksheet.cell(4, 3)
     .string("Contract")
     .style(headerStyle);
-  const mochaDir=sumoDir+'/mochawesome-report/'
-  const mutationsJsonDir=sumoDir+'/mutations.json'
-  const dirPath=path.join(mochaDir)
-  let mochaDirItems= fs.readdirSync(dirPath);
-  var columnCounter=0
-  let counter=5
+  const mochaDir = sumoDir + '/mochawesome-report/'
+  const mutationsJsonDir = sumoDir + '/mutations.json'
+  const dirPath = path.join(mochaDir)
+  let mochaDirItems = fs.readdirSync(dirPath);
+  var columnCounter = 0
+  let counter = 5
   //Structure
-  let item=mochaDirItems[0]
+  let item = mochaDirItems[0]
   let mochaFile = fs.readFileSync(mochaDir + item)
   let json = JSON.parse(mochaFile)
   let mochaMutant = json.results[0]
@@ -551,31 +619,31 @@ Reporter.prototype.saveTestData=function () {
     worksheet.cell(2, columnCounter + 4)
       .string(mochaMutant.suites[i].title)
       .style(style)
-    if (suite.length===0 ) {
-      for(let j=0;j<mochaMutant.suites[i].tests.length;j++){
+    if (suite.length === 0) {
+      for (let j = 0; j < mochaMutant.suites[i].tests.length; j++) {
         worksheet.cell(4, columnCounter + 4)
           .string(mochaMutant.suites[i].tests[j].title)
           .style(style)
         columnCounter++
       }
     }
-  else {
-    for (let j = 0; j < suite.length; j++) {
-      worksheet.cell(3, columnCounter + 4)
-        .string(suite[j].title)
-        .style(style)
-      let testCase = suite[j].tests
-      for (let k = 0; k < testCase.length; k++) {
-        worksheet.cell(4, columnCounter + 4)
-          .string(testCase[k].title)
+    else {
+      for (let j = 0; j < suite.length; j++) {
+        worksheet.cell(3, columnCounter + 4)
+          .string(suite[j].title)
           .style(style)
-        columnCounter++
+        let testCase = suite[j].tests
+        for (let k = 0; k < testCase.length; k++) {
+          worksheet.cell(4, columnCounter + 4)
+            .string(testCase[k].title)
+            .style(style)
+          columnCounter++
+        }
       }
     }
   }
-  }
-  for(let item of mochaDirItems){
-    var count2=0
+  for (let item of mochaDirItems) {
+    var count2 = 0
     let hash = parse(item).name
     hash = hash.substring(12)
     worksheet.cell(counter, 1)
@@ -592,14 +660,15 @@ Reporter.prototype.saveTestData=function () {
         worksheet.cell(counter, 3)
           .string(contractName)
           .style(style)
-      }}
+      }
+    }
     let mochaFile = fs.readFileSync(mochaDir + item)
     let json = JSON.parse(mochaFile)
     let mochaMutant = json.results[0]
-    for(let i=0;i<mochaMutant.suites.length;i++) {
+    for (let i = 0; i < mochaMutant.suites.length; i++) {
       let testSuite = mochaMutant.suites[i]
       if (testSuite.suites.length === 0) {
-        for (let j = 0; j<testSuite.tests.length; j++) {
+        for (let j = 0; j < testSuite.tests.length; j++) {
           if (testSuite.tests[j].state === 'passed') {
             worksheet.cell(counter, count2 + 4)
               .string('L')
@@ -615,31 +684,30 @@ Reporter.prototype.saveTestData=function () {
           count2++
         }
       } else {
-      for (let j = 0; j < testSuite.suites.length; j++) {
-        let testCase = testSuite.suites[j].tests
-        for (let k = 0; k < testCase.length; k++) {
-          if (testCase[k].state === 'passed') {
-            worksheet.cell(counter, count2 + 4)
-              .string('L')
-              .style(stylePassed)
-          } else if (testCase[k].state === 'failed') {
-            worksheet.cell(counter, count2 + 4)
-              .string('K')
-              .style(styleFailed)
-          } else
-            worksheet.cell(counter, count2 + 4)
-              .string('-')
-              .style(styleNull)
-          count2++
+        for (let j = 0; j < testSuite.suites.length; j++) {
+          let testCase = testSuite.suites[j].tests
+          for (let k = 0; k < testCase.length; k++) {
+            if (testCase[k].state === 'passed') {
+              worksheet.cell(counter, count2 + 4)
+                .string('L')
+                .style(stylePassed)
+            } else if (testCase[k].state === 'failed') {
+              worksheet.cell(counter, count2 + 4)
+                .string('K')
+                .style(styleFailed)
+            } else
+              worksheet.cell(counter, count2 + 4)
+                .string('-')
+                .style(styleNull)
+            count2++
+          }
         }
-      }
       }
     }
     counter++
   }
   workbook.write("./.sumo/testData.xlsx");
 }
-
 
 
 //Extracts test information from mochawesome reports and adds them to the mutation object
@@ -668,7 +736,7 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
       let path = sumoDir + '/mochawesome-report/mochawesome-' + hash + '.json'
       let rawdata = fs.readFileSync(path);
       let json = JSON.parse(rawdata);
-      var check=false
+      var check = false
       let testFiles = json.results[0].suites;
       let killers = [];
       let nonKillers = [];
@@ -692,10 +760,10 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
             }
           }
         }
-        if(check){
+        if (check) {
           killers.push(testFileInfo[0])
         }
-        else{
+        else {
           nonKillers.push(testFileInfo[0])
         }
       }
@@ -712,7 +780,7 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
       mutationObj.nonKillers = mutation.nonKillers
       this.mutations.push(mutationObj)
     } else {
-      console.log('ERROR: Could not access ' +sumoDir + '/mochawesome-report/mochawesome-' + hash + '.json' );
+      console.log('ERROR: Could not access ' + sumoDir + '/mochawesome-report/mochawesome-' + hash + '.json');
     }
   } else {
     mutationObj = new Object()
@@ -727,11 +795,11 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
 }
 
 //Saves the mutation to .sumo/mutations.json
-Reporter.prototype.saveMochawesomeReportInfo = function() {
+Reporter.prototype.saveMochawesomeReportInfo = function () {
 
   let jsonData = JSON.stringify(this.mutations, null, 1);
 
-  fs.appendFileSync(sumoDir + "/mutations.json", jsonData, "utf8", function(err) {
+  fs.appendFileSync(sumoDir + "/mutations.json", jsonData, "utf8", function (err) {
     if (err) {
       return console.log(err);
     }
@@ -739,7 +807,7 @@ Reporter.prototype.saveMochawesomeReportInfo = function() {
   });
 
 };
-Reporter.prototype.restore = function() {
+Reporter.prototype.restore = function () {
   this.mutations = [];
   this.survived = [];
   this.killed = [];
@@ -748,7 +816,7 @@ Reporter.prototype.restore = function() {
   this.redundant = [];
   this.timedout = [];
 };
-Reporter.prototype.getMutants = function(){
+Reporter.prototype.getMutants = function () {
   return this.mutations
 }
 

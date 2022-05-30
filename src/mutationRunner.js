@@ -6,6 +6,10 @@ const mkdirp = require("mkdirp");
 const parser = require("@solidity-parser/parser");
 const { parse } = require("path");
 const chalk = require("chalk");
+const readline = require('readline');
+const rimraf = require('rimraf')
+
+
 
 //SuMo modules
 const Reporter = require("./reporter");
@@ -22,7 +26,6 @@ const { report } = require("process");
 const absoluteSumoDir = config.absoluteSumoDir;
 const sumoDir = config.sumoDir;
 const targetDir = config.targetDir;
-const baselineDir = config.baselineDir;
 const contractsDir = config.contractsDir;
 const buildDir = config.buildDir;
 const testDir = config.testDir;
@@ -30,8 +33,8 @@ const liveDir = config.liveDir;
 const killedDir = config.killedDir;
 const mutantsDir = config.mutantsDir;
 const contractsGlob = config.contractsGlob;
-const testConfigGlob = config.testConfigGlob;
-const packageManagerGlob = config.packageManagerGlob;
+const baselineDir = config.baselineDir;
+
 var testingFramework;
 var packageManager;
 var runScript;
@@ -99,71 +102,61 @@ function prepare(callback) {
   }
 
   //Checks the package manager used by the SUT
-  let packageManagerFile;
-  for (const lockFile of packageManagerGlob) {
-    if (fs.existsSync(targetDir + lockFile)) {
-      packageManagerFile = lockFile;
-      if (lockFile.includes("yarn")) {
-        packageManager = "yarn";
-        runScript = "run";
-      } else {
-        packageManager = "npm";
-        runScript = "run-script";
-      }
-      break;
-    }
-  }
+  let pmConfig = utils.getPackageManager()
+  packageManager = pmConfig.packageManager;
+  runScript = pmConfig.runScript;
 
-  if (!packageManagerFile) {
-    console.error("Target project does not contain a suitable lock file.");
-    process.exit(1);
-  }
-
-  //Checks the testing framework used by the SUT
-  let targetConfigFile;
-  for (const configFile of testConfigGlob) {
-    if (fs.existsSync(targetDir + configFile)) {
-      targetConfigFile = configFile;
-      if (configFile.includes("truffle")) {
-        testingFramework = "truffle";
-      } else {
-        testingFramework = "hardhat";
-      }
-      instrumenter.setConfig(targetConfigFile);
-      break;
-    }
-  }
-
-  if (!targetConfigFile) {
-    console.error("Target project does not contain a suitable test configuration file.");
-    process.exit(1);
-  }
+  let config = utils.getTestConfig();
+  instrumenter.setConfig(config.targetConfigFile);
+  testingFramework = config.testingFramework;
 
   mkdirp(liveDir);
   mkdirp(killedDir);
   mkdirp(mutantsDir);
 
-  mkdirp(baselineDir, () =>
-    fs.copyFile(targetDir + targetConfigFile, baselineDir + targetConfigFile, (err) => {
-      if (err) throw err;
-    }),
-    copy(contractsDir, baselineDir, { dot: true }, callback)
-  );
+  if (fs.existsSync(baselineDir)) {
+    rimraf(baselineDir, function () {
+      //console.log("Baseline deleted");
+      mkdirp(baselineDir, () =>
+        copy(targetDir + config.targetConfigFile, baselineDir + config.targetConfigFile,
+          copy(testDir, baselineDir + '/test', { dot: true },
+            copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
+      );
+    })
+  } else {
+
+    mkdirp(baselineDir, () =>
+      copy(targetDir + config.targetConfigFile, baselineDir + config.targetConfigFile,
+        copy(testDir, baselineDir + '/test', { dot: true },
+          copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
+    );
+  }
 }
 
 /**
- * Shows a summary of the available mutants without starting the testing process.
+ * Shows a summary of all the mutants without starting the testing process.
  */
 function preflight() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
-      const mutations = generateAllMutations(files)
+      let contractsUnderMutation;
+      if (config.regression) {
+        resume.regressionTesting(false);
+        contractsUnderMutation = resumeContractSelection();
+        testsToBeRun = resumeTestSelection();
+        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun, config.testUtils);
+      } else {
+        contractsUnderMutation = defaultContractSelection(files);
+        reporter.printFilesUnderTest(contractsUnderMutation, null, null);
+      }
+      const mutations = generateAllMutations(contractsUnderMutation)
       reporter.preflightSummary(mutations)
       //reporter.preflightToExcel(mutations)
     })
   );
 }
+
 
 /**
  * Shows a summary of the available mutants without starting the testing process and
@@ -173,7 +166,17 @@ function preflightAndSave() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
-      const mutations = generateAllMutations(files);
+      let contractsUnderMutation;
+      if (config.regression) {
+        resume.regressionTesting(false);
+        contractsUnderMutation = resumeContractSelection();
+        testsToBeRun = resumeTestSelection();
+        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun, config.testUtils);
+      } else {
+        contractsUnderMutation = defaultContractSelection(files);
+        reporter.printFilesUnderTest(contractsUnderMutation, null, null);
+      }
+      const mutations = generateAllMutations(contractsUnderMutation);
       for (const mutation of mutations) {
         mutation.save();
       }
@@ -191,19 +194,13 @@ function generateAllMutations(files) {
   reporter.setupReport();
   let mutations = [];
   var startTime = Date.now();
+  let contractsUnderTest = defaultContractSelection(files);
 
-  for (const file of files) {
-    let ignoreFile = false;
-    for (const path of config.skipContracts) {
-      if (file.startsWith(path))
-        ignoreFile = true;
-    }
-    if (!ignoreFile) {
-      const source = fs.readFileSync(file, "utf8");
-      const ast = parser.parse(source, { range: true });
-      const visit = parser.visit.bind(parser, ast);
-      mutations = mutations.concat(mutGen.getMutations(file, source, visit));
-    }
+  for (const file of contractsUnderTest) {
+    const source = fs.readFileSync(file, "utf8");
+    const ast = parser.parse(source, { range: true });
+    const visit = parser.visit.bind(parser, ast);
+    mutations = mutations.concat(mutGen.getMutations(file, source, visit));
   }
   var generationTime = (Date.now() - startTime) / 1000;
   reporter.saveGenerationTime(mutations.length, generationTime);
@@ -215,16 +212,16 @@ function generateAllMutations(files) {
  */
 function preTest() {
   reporter.beginPretest();
-  ganacheChild = testingInterface.spawnGanache();
+  let ganacheChild = testingInterface.spawnGanache();
   const status = testingInterface.spawnTest(packageManager, testingFramework, runScript);
   if (status === 0) {
     console.log("Pre-test OK.");
   } else {
+    testingInterface.killGanache(ganacheChild);
     console.error(chalk.red("Error: Original tests should pass."));
     process.exit(1);
   }
-  testingInterface.killGanache();
-  utils.cleanTmp();
+  testingInterface.killGanache(ganacheChild);
 }
 
 function exploreDirectories(Directory) {
@@ -243,16 +240,23 @@ function exploreDirectories(Directory) {
 function test() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
+      if (err) throw err;
 
       //Run the pre-test
-      //preTest();
+      preTest();
 
       //Select contracts to mutate and tests to be run
-      var changedContracts;
+      let changedContracts;
+
       if (config.regression) {
-        changedContracts = resumeSelection();
+        resume.regressionTesting(true);
+        changedContracts = resumeContractSelection();
+        let testsToBeRun = resumeTestSelection();
+        unlinkTests(testsToBeRun);
+        reporter.printFilesUnderTest(changedContracts, testsToBeRun, config.testUtils);
       } else {
         changedContracts = files;
+        reporter.printFilesUnderTest(changedContracts, null, null);
       }
 
       //Compile the original contracts and save their bytecode
@@ -261,8 +265,8 @@ function test() {
       var contractsToMutate = [];
       var check = false;
       for (const changedContract of changedContracts) {
-        for (const ignoreElement of config.skipContracts) {
-          if (ignoreElement !== changedContract) {
+        for (const skipContract of config.skipContracts) {
+          if (skipContract !== changedContract) {
             check = true;
           } else {
             check = false;
@@ -290,7 +294,7 @@ function test() {
       const mutations = generateAllMutations(contractsToMutate);
 
       //Compile and test each mutant
-      reporter.beginMutationTesting(originalBytecodeMap, mutations)
+      reporter.beginMutationTesting()
       var startTime = Date.now();
       for (const file of originalBytecodeMap.keys()) {
         runTest(mutations, originalBytecodeMap, file);
@@ -313,56 +317,133 @@ function test() {
 }
 
 /**
- * Invokes ReSuMe to select the contracts to mutate the tests to be run
+ * Default selection of contracts to mutate
+ * @param files array of paths of all Smart Contracts * 
  */
-function resumeSelection() {
-  var changedContracts;
-  var changedTests;
-  var originalTests;
-  resume.regressionTesting();
+function defaultContractSelection(files) {
+  var contractUnderMutation = [];
 
-  changedContracts = resume.getChangedContracts();
-  changedTests = resume.getChangedTest();
-  originalTests = resume.getOriginalTest();
-  if (changedContracts == 0 && changedTests == 0) {
-    process.exit(1);
-  }
-
-  //Delete tests that must not be run
-  for (const originalTest of originalTests) {
-    let deleteTest = false;
-
-    //If the test must be skipped
-    for (const path of config.skipTests) {
-      if (originalTest.path.startsWith(path)) {
-        console.log("Skipped test > "+originalTest.path);
-        deleteTest = true;
+  for (const file of files) {
+    let skipContract = false;
+    for (const path of config.skipContracts) {
+      if (file.startsWith(path)) {
+        skipContract = true;
         break;
       }
     }
-    if (!deleteTest) {
-      //If the test was not selected by ReSuMe
-      if (!changedTests.includes(originalTest.path)) {
-        deleteTest = true;
-      
-        //If the test is an util it will not be deleted
-        if (deleteTest) {
-          for (const path of config.testUtils) {
-            if (originalTest.path.startsWith(path)) {
-              console.log("Util test > "+originalTest.path);
-              deleteTest = false;
-              break;
-            }
-          }
-        }       
+    if (!skipContract) {
+      contractUnderMutation.push(file)
+    }
+  }
+  return contractUnderMutation;
+}
+
+/**
+ * @returns a list of contracts to be mutated
+ */
+function resumeContractSelection() {
+  let changedContracts = resume.getChangedContracts();
+  let contractsUnderMutation = [];
+
+  for (const file of changedContracts) {
+    let skipContract = false;
+    for (const path of config.skipContracts) {
+      if (file.startsWith(path)) {
+        skipContract = true;
+        break;
       }
     }
-    if (deleteTest) {
+    if (!skipContract) {
+      contractsUnderMutation.push(file)
+    }
+  }
+  return contractsUnderMutation;
+}
+
+/**
+ * Regression selection of contracts to mutate
+ * @param overwrite overwrite regression artefacts of previous revision
+ * @returns a list of tests to be run
+ */
+function resumeTestSelection() {
+  let regressionTests = [];
+  let changedTests = resume.getChangedTest();
+  let originalTests = resume.getOriginalTest();
+
+  //Select tests to be run
+  for (const originalTest of originalTests) {
+    let keepTest = false;
+
+    //If the test is an util it will not be deleted
+    for (const path of config.testUtils) {
+      if (originalTest.path.startsWith(path)) {
+        keepTest = true;
+        break;
+      }
+    }
+
+    if (!keepTest) {
+      //If the test was marked as changed by ReSuMe
+      if (changedTests.includes(originalTest.path)) {
+        keepTest = true;
+      }
+      if (keepTest) {
+        //If the test must be skipped
+        for (const path of config.skipTests) {
+          if (originalTest.path.startsWith(path)) {
+            //console.log("Skipped test > " + originalTest.path);
+            keepTest = false;
+            break;
+          }
+        }
+      }
+    }
+    if (keepTest) {
+      regressionTests.push(originalTest.path);
+    }
+  }
+  return regressionTests;
+}
+
+/**
+ * Unliks tests that must not be run
+ * @param regrTests regression tests to be kept
+ * 
+ */
+function unlinkTests(regrTests) {
+  let regressionTests = regrTests;
+  let originalTests = resume.getOriginalTest();
+  for (const originalTest of originalTests) {
+    if (!regressionTests.includes(originalTest.path)) {
       fs.unlinkSync(originalTest.path);
     }
   }
-  return changedContracts;
 }
+
+function regression() {
+  if (!config.regression) {
+    console.error("Regression mutation testing is currently disabled.");
+    process.exit(1);
+  }
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  rl.question("If you run regression mutation testing the '.resume' folder will be overwritten. do yant to proceed? y/n > ", function (response) {
+    response = response.trim()
+    response = response.toLowerCase()
+    if (response === 'y' || response === 'yes') {
+      resume.regressionTesting();
+      rl.close()
+    }
+    else {
+      rl.close()
+    }
+  })
+}
+
 
 function mutationsByHash(mutations) {
   return mutations.reduce((obj, mutation) => {
@@ -457,8 +538,7 @@ function runTest(mutations, originalBytecodeMap, file) {
   const bytecodeMutantsMap = new Map();
   for (const mutation of mutations) {
     if ((mutation.file.substring(mutation.file.lastIndexOf("/") + 1)) === (file + ".sol")) {
-      var startTime = Date.now()
-      ganacheChild = testingInterface.spawnGanache();
+      let ganacheChild = testingInterface.spawnGanache();
       mutation.apply();
       reporter.beginCompile(mutation);
       const isCompiled = testingInterface.spawnCompile(packageManager, testingFramework, runScript);
@@ -468,7 +548,9 @@ function runTest(mutations, originalBytecodeMap, file) {
         }
         if (mutation.status !== "redundant" && mutation.status !== "equivalent") {
           reporter.beginTest(mutation);
+          let startTestTime = Date.now();
           const result = testingInterface.spawnTest(packageManager, testingFramework, runScript);
+          mutation.testingTime = Date.now() - startTestTime;
           if (result === 0) {
             mutation.status = "live";
           } else if (result === 999) {
@@ -485,9 +567,7 @@ function runTest(mutations, originalBytecodeMap, file) {
       }
       reporter.mutantStatus(mutation);
       mutation.restore();
-      testingInterface.killGanache();
-      utils.cleanTmp();
-      mutation.time = Date.now() - startTime;
+      testingInterface.killGanache(ganacheChild);
     }
   }
   bytecodeMutantsMap.clear();
@@ -541,7 +621,7 @@ function generateTestExcel() {
 
 module.exports = {
   test: test, preflight, preflight, mutate: preflightAndSave, diff: diff, list: list,
-  enable: enableOperator, disable: disableOperator, preTest: preTest, generateExcel: generateTestExcel
+  enable: enableOperator, disable: disableOperator, preTest: preTest, generateExcel: generateTestExcel, resume: regression
 };
 
 
