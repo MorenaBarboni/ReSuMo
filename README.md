@@ -1,3 +1,8 @@
+<p align="center">
+      <img src="https://github.com/MorenaBarboni/ReSuMo/blob/main/src/SuMo-logos/Resumo.png?raw=true" alt="ReSuMo" style="max-width:100%;" width="350">
+</p>
+
+
 # ReSuMo
 
 ReSuMo is a mutation testing tool for Solidity Smart Contracts. 
