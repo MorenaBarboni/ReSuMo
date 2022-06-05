@@ -20,7 +20,6 @@ const utils = require("./utils");
 const config = require("./config");
 const resume = require("./resume/resume");
 const csvWriter = require("./resume/utils/csvWriter");
-const { report } = require("process");
 
 //SuMo configuration
 const absoluteSumoDir = config.absoluteSumoDir;
@@ -35,10 +34,10 @@ const mutantsDir = config.mutantsDir;
 const contractsGlob = config.contractsGlob;
 const baselineDir = config.baselineDir;
 
-var testingFramework;
 var packageManager;
 var runScript;
-var compiledContracts = [];
+var originalBytecodeMap = new Map();
+var compiledArtifacts = [];
 
 //SuMo modules
 const reporter = new Reporter();
@@ -101,7 +100,7 @@ function prepare(callback) {
     process.exit(1);
   }
 
-  if(config.tce && config.buildDir === ''){
+  if (config.tce && buildDir === '') {
     console.error('Build directory is missing.')
     process.exit(1)
   }
@@ -111,9 +110,9 @@ function prepare(callback) {
   packageManager = pmConfig.packageManager;
   runScript = pmConfig.runScript;
 
-  let config = utils.getTestConfig();
-  instrumenter.setConfig(config.targetConfigFile);
-  testingFramework = config.testingFramework;
+  let testConfigFile = utils.getTestConfig();
+  console.log(testConfigFile)
+  instrumenter.setConfig(testConfigFile);
 
   mkdirp(liveDir);
   mkdirp(killedDir);
@@ -123,15 +122,14 @@ function prepare(callback) {
     rimraf(baselineDir, function () {
       //console.log("Baseline deleted");
       mkdirp(baselineDir, () =>
-        copy(targetDir + config.targetConfigFile, baselineDir + config.targetConfigFile,
+        copy(targetDir + testConfigFile, baselineDir + testConfigFile,
           copy(testDir, baselineDir + '/test', { dot: true },
             copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
       );
     })
   } else {
-
     mkdirp(baselineDir, () =>
-      copy(targetDir + config.targetConfigFile, baselineDir + config.targetConfigFile,
+    copy(targetDir + testConfigFile, baselineDir + testConfigFile,
         copy(testDir, baselineDir + '/test', { dot: true },
           copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
     );
@@ -199,8 +197,7 @@ function generateAllMutations(files) {
   reporter.setupReport();
   let mutations = [];
   var startTime = Date.now();
-  let contractsUnderTest = defaultContractSelection(files);
-
+  let contractsUnderTest = files;
   for (const file of contractsUnderTest) {
     const source = fs.readFileSync(file, "utf8");
     const ast = parser.parse(source, { range: true });
@@ -216,27 +213,28 @@ function generateAllMutations(files) {
  * Runs the original test suite to ensure that all tests pass.
  */
 function preTest() {
+
   reporter.beginPretest();
+  utils.cleanBuildDir(); //Remove old compiled artifacts
+
   let ganacheChild = testingInterface.spawnGanache();
-  const status = testingInterface.spawnTest(packageManager, testingFramework, runScript);
-  if (status === 0) {
-    console.log("Pre-test OK.");
+  const isCompiled = testingInterface.spawnCompile(packageManager, runScript);
+
+  if (isCompiled) {
+    const status = testingInterface.spawnTest(packageManager, runScript);
+    if (status === 0) {
+      console.log("Pre-test OK.");
+    } else {
+      testingInterface.killGanache(ganacheChild);
+      console.error(chalk.red("Error: Original tests should pass."));
+      process.exit(1);
+    }
   } else {
     testingInterface.killGanache(ganacheChild);
-    console.error(chalk.red("Error: Original tests should pass."));
+    console.error(chalk.red("Error: Original contracts should compile."));
     process.exit(1);
   }
   testingInterface.killGanache(ganacheChild);
-}
-
-function exploreDirectories(Directory) {
-  fs.readdirSync(Directory).forEach(File => {
-    const Absolute = path.join(Directory, File);
-    if (fs.statSync(Absolute).isDirectory())
-      return exploreDirectories(Absolute);
-    else
-      return compiledContracts.push(Absolute);
-  });
 }
 
 /**
@@ -252,7 +250,6 @@ function test() {
 
       //Select contracts to mutate and tests to be run
       let changedContracts;
-
       if (config.regression) {
         resume.regressionTesting(true);
         changedContracts = resumeContractSelection();
@@ -260,49 +257,32 @@ function test() {
         unlinkTests(testsToBeRun);
         reporter.printFilesUnderTest(changedContracts, testsToBeRun, config.testUtils);
       } else {
-        changedContracts = files;
+        changedContracts = defaultContractSelection(files);        
         reporter.printFilesUnderTest(changedContracts, null, null);
       }
 
-      //Compile the original contracts and save their bytecode
-      testingInterface.spawnCompile(packageManager, testingFramework, runScript);
-      var originalBytecodeMap = new Map();
-      var contractsToMutate = [];
-      var check = false;
-      for (const changedContract of changedContracts) {
-        for (const skipContract of config.skipContracts) {
-          if (skipContract !== changedContract) {
-            check = true;
-          } else {
-            check = false;
-            break;
-          }
-        }
-        //save the contracts to be mutated and their bytecode
-        if (check) {
-          exploreDirectories(buildDir)
-          compiledContracts.map(singleContract => {
-            if (parse(singleContract).name === parse(changedContract).name) {
-              originalBytecodeMap.set(parse(changedContract).name, saveBytecodeSync(singleContract))
-              if (!contractsToMutate.includes(changedContract)) {
-                contractsToMutate.push(changedContract)
-              }
+      if (config.tce) {
+        //save the bytecode of the original contracts
+        exploreDirectories(buildDir)
+        for (const changedContract of changedContracts) {
+          compiledArtifacts.map(artifact => {
+            if (parse(artifact).name === parse(changedContract).name) {
+              originalBytecodeMap.set(parse(changedContract).name, saveBytecodeSync(artifact))
             }
           })
         }
-        check = false
       }
 
       //Generate the mutations
       instrumenter.instrumentConfig();
       reporter.setupMutationsReport();
-      const mutations = generateAllMutations(contractsToMutate);
+      const mutations = generateAllMutations(changedContracts);
 
       //Compile and test each mutant
       reporter.beginMutationTesting()
       var startTime = Date.now();
-      for (const file of originalBytecodeMap.keys()) {
-        runTest(mutations, originalBytecodeMap, file);
+      for (const file of changedContracts) {
+        runTest(mutations, file);
       }
       var testTime = ((Date.now() - startTime) / 60000).toFixed(2);
 
@@ -539,22 +519,23 @@ function saveBytecodeSync(file) {
  * @param originalBytecodeMap A map containing all original contracts bytecodes
  * @param file The name of the original contract
  */
-function runTest(mutations, originalBytecodeMap, file) {
-  const bytecodeMutantsMap = new Map();
+function runTest(mutations, file) {
+  const mutantBytecodeMap = new Map();
+
   for (const mutation of mutations) {
-    if ((mutation.file.substring(mutation.file.lastIndexOf("/") + 1)) === (file + ".sol")) {
+    if ((parse(mutation.file).name) === (parse(file).name)) {
       let ganacheChild = testingInterface.spawnGanache();
       mutation.apply();
       reporter.beginCompile(mutation);
-      const isCompiled = testingInterface.spawnCompile(packageManager, testingFramework, runScript);
+      const isCompiled = testingInterface.spawnCompile(packageManager, runScript);
       if (isCompiled) {
         if (config.tce) {
-          tce(mutation, bytecodeMutantsMap, file, originalBytecodeMap);
+          tce(mutation, mutantBytecodeMap, originalBytecodeMap);
         }
         if (mutation.status !== "redundant" && mutation.status !== "equivalent") {
           reporter.beginTest(mutation);
           let startTestTime = Date.now();
-          const result = testingInterface.spawnTest(packageManager, testingFramework, runScript);
+          const result = testingInterface.spawnTest(packageManager, runScript);
           mutation.testingTime = Date.now() - startTestTime;
           if (result === 0) {
             mutation.status = "live";
@@ -575,7 +556,7 @@ function runTest(mutations, originalBytecodeMap, file) {
       testingInterface.killGanache(ganacheChild);
     }
   }
-  bytecodeMutantsMap.clear();
+  mutantBytecodeMap.clear();
 }
 
 /**
@@ -584,35 +565,50 @@ function runTest(mutations, originalBytecodeMap, file) {
  * status is assigned to the mutated contract that has the same bytecode of another mutated contract already tested.
  * @param mutation The mutated contract
  * @param map The map of the already tested mutated contract
- * @param file The file to analyze
  * @param originalBytecodeMap The map that contains all non-mutated contract bytecode
  */
-function tce(mutation, map, file, originalBytecodeMap) {
+function tce(mutation, map, originalBytecodeMap) {
+
+  console.log();
+  console.log(chalk.yellow('Running the TCE'));
+  let fileName = parse(mutation.file).name;
+
+  compiledArtifacts = [];
+
   exploreDirectories(buildDir)
-  compiledContracts.map(data => {
-    if (parse(data).name === parse(mutation.file).name) {
-      mutation.bytecode = saveBytecodeSync(data);
+  compiledArtifacts.map(artifact => {
+    if (parse(artifact).name === parse(mutation.file).name) {
+      mutation.bytecode = saveBytecodeSync(artifact);
     }
   })
-  if (originalBytecodeMap.get(file) === mutation.bytecode) {
+
+  if (originalBytecodeMap.get(fileName) === mutation.bytecode) {
     mutation.status = "equivalent";
-    console.log(chalk.magenta("EQUIVALENT"));
   } else if (map.size !== 0) {
     for (const key of map.keys()) {
       if (map.get(key) === mutation.bytecode) {
         mutation.status = "redundant";
-        console.log(chalk.magenta("REDUNDANT"));
         break;
       }
     }
     if (mutation.status !== "redundant") {
       map.set(mutation.hash(), mutation.bytecode);
     }
-
   } else {
     map.set(mutation.hash(), mutation.bytecode);
   }
 }
+
+function exploreDirectories(Directory) {
+  fs.readdirSync(Directory).forEach(File => {
+    const Absolute = path.join(Directory, File);
+    if (fs.statSync(Absolute).isDirectory())
+      return exploreDirectories(Absolute);
+    else
+      return compiledArtifacts.push(Absolute);
+  });
+}
+
 
 /**
  Saves the test results extracted from the  mocha-report dir to an excel file

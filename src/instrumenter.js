@@ -16,23 +16,7 @@ Instrumenter.prototype.instrumentConfig = function() {
   console.log("Instrumenting configuration file:  " + config.targetDir + this.testConfigFile);
   console.log("\n");
 
-  if (this.testConfigFile === "/hardhat.config.js" || this.testConfigFile === "/hardhat.config.ts") {
-    instrumentHardhatConfig(this.testConfigFile);
-  } else if (this.testConfigFile === "/truffle-config.js") {
-    instrumentTruffleConfig(this.testConfigFile);
-  }
-};
-
-/* Instrument a HardHat configuration file */
-function instrumentHardhatConfig(file) {
-  console.log("HardHat config instrumentation currently not supported");
-  console.log("Instrumentation skipped ...");
-}
-
-/* Instrument a Truffle configuration file */
-function instrumentTruffleConfig(file) {
-
-  const newConfig = require(config.targetDir + file);
+  const newConfig = require(config.targetDir + this.testConfigFile);
 
   //Instrument truffle-config
   addMochawesome(newConfig);
@@ -44,22 +28,28 @@ function instrumentTruffleConfig(file) {
   //Overwrite target truffle-config
   let jsonData = JSON.stringify(newConfig);
   let codeStr = `module.exports = ${jsonData}`;
-  fs.writeFileSync(config.targetDir + "/truffle-config.js", codeStr, "utf8", function(err) {
+
+  fs.writeFileSync(config.targetDir + this.testConfigFile, codeStr, "utf8", function(err) {
     if (err) {
       return console.log(err);
     }
     console.log("Done.");
   });
+
+};
+
+
+/* Instrument a Truffle configuration file */
+function instrumentTruffleConfig(file) {
+
+ 
 }
 
 /* Restore original config file */
 Instrumenter.prototype.restoreConfig = function() {
-  //hardhat not yet supported
-  if (this.testConfigFile === "/truffle-config.js") {
-    console.log("Restoring" + config.targetDir + this.testConfigFile);
-    const original = fs.readFileSync("./" + config.baselineDir + this.testConfigFile, "utf8");
-    fs.writeFileSync(config.targetDir + this.testConfigFile, original, "utf8");
-  }
+  console.log("Restoring " + config.targetDir + this.testConfigFile);
+  const original = fs.readFileSync("./" + config.baselineDir + this.testConfigFile, "utf8");
+  fs.writeFileSync(config.targetDir + this.testConfigFile, original, "utf8");  
 };
 
 /* Add mochawesome reporter */

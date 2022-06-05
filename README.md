@@ -38,17 +38,53 @@ These fields specify the path to different artefacts of the System Under Test:
  
 ##### 3) Mutation Process
 These fields allow to set up the mutation testing process
-
-* ```skipContracts```:  array of paths to contract files (or contract folders) that must be ignored by ReSuMo during mutation testing
-* ```skipTests```:   array of paths to test files that must not be run by ReSuMo during regression mutation testing
-* ```testUtils```:   array of paths to utility test files that must not be deleted by ReSuMo during regression mutation testing
+* ```bail```: bail after the first test failure (false by default)
+* ```customTestScript```: use a custom test script specified in the package.json of the SUT, instead of relying on the Truffle interface (false by default). Note that if ```customTestScript``` is true you must specify a ```test``` and ```compile``` script in your ```package.json``` file. Moreover, the ```bail``` option is ignored; it must be added to the custom test script itself.
 * ```ganache```: automatically spawn Ganache instances during the testing process (true by default)
 * ```optimized```: employ operator optimizations (true by default),
+* ```regression```: enable regression mutation testing (false by default). Note that if ```regression``` is true the ```bail``` option is disabled to run regression mutation testing. 
+* ```skipContracts```:  array of paths to contract files (or contract folders) that must be ignored by ReSuMo during mutation testing
+* ```skipTests```:   array of paths to test files that must not be run by ReSuMo during regression mutation testing. 
 * ```tce```: apply the TCE (true by default). Note that projects that are not Truffle-based currently require a manual instrumentation of the test configuration file. 
-* ```customTestScript```: use a custom test script specified in the package.json of the SUT, instead of relying on the Truffle interface (false by default)
-* ```regression```: enable regression mutation testing (false by default),
 * ```testingTimeOutInSec```: number of seconds after which a mutant is marked as timed-out during testing (300 by default)
+* ```testUtils```:   array of paths to utility test files that must not be deleted by ReSuMo during regression mutation testing
 
+##### 4) Trivial Compiler Equivalence
+
+The Trivial Compiler Equivalence compares the bytecode produced by the compiler to detect equivalences between mutants, thus it can only work if:
+1. the solc compiler optimization is enabled;
+2. no metadata hash is appended to the contract bytecode.
+
+To this end, ReSuMo automatically adds the necessary fields to your Truffle configuration file. However, if you are using a different testing framework (e.g, Hardhat) you must manually add the following options to the configuration file: 
+
+```
+ compilers: {
+        solc: {
+            optimizer: {
+                enabled: true,
+                ...
+            },
+	      metadata: {
+                bytecodeHash: "none"
+            }
+        }
+    }
+```
+
+##### 4) Regression Mutation Testing
+
+ReSuMo relies on the [mochawesome](https://github.com/adamgruber/mochawesome) reporter to save test reports and enable regression mutation testing. To use mochawesome, ReSuMo automatically adds the necessary fields to your Truffle configuration file.
+If you are using a different testing framework (e.g, Hardhat) you must manually add the following options to the configuration file: 
+
+```
+mocha = {
+      reporter: "mochawesome",
+      reporterOptions: {
+            reportDir: absoluteSumoDir + "/mochawesome-report",
+            html: false
+      }
+}
+```
 
 ## CLI Usage
 
@@ -69,6 +105,9 @@ Once everything is set up you can use:
 Use:
 * ```npm run sumo test``` To launch the mutation testing process;
 * ```npm run sumo restore``` To restore the SUT files to a clean version if you suddenly interrupt the mutation process
+
+Note that the restore command overwrites the content of the project under test with the files stored in the ```.sumo/baseline``` folder.
+If you need to restore the project files, make sure to do so before performing other operations as the baseline is automatically refreshed on subsequent preflight or test runs.
 
 #### Running Regression Mutation Testing
 Regression mutation testing is automatically performed when the ``regression`` flag is set to true. You can simply run  ```sumo test```, and ReSuMo will analyze the SUT to:

@@ -96,24 +96,19 @@ function getPackageManager() {
 
 //Checks the testing framework used by the SUT
 function getTestConfig() {
-  let config = {};
+  let targetConfigFile = {};
 
   for (const configFile of testConfigGlob) {
     if (fs.existsSync(targetDir + configFile)) {
-      config.targetConfigFile = configFile;
-      if (!config.targetConfigFile) {
+      targetConfigFile = configFile;
+      if (!targetConfigFile) {
         console.error("Target project does not contain a suitable test configuration file.");
         process.exit(1);
-      }
-      if (configFile.includes("truffle")) {
-        config.testingFramework = "truffle";
-      } else {
-        config.testingFramework = "hardhat";
       }
       break;
     }
   }
-  return config;
+  return targetConfigFile;
 }
 
 /**
@@ -140,6 +135,18 @@ function cleanResumeFromCLI() {
       rl.close()
     }
   })
+}
+
+/**
+ * Cleans the build dir
+ */
+ function cleanBuildDir() {
+  if (fs.existsSync(config.buildDir)) {
+    fsExtra.emptyDirSync(config.buildDir);
+    console.log("Build directory cleaned.");
+  } else {
+    console.log("Build directory is already empty.");
+  }
 }
 
 /**
@@ -245,6 +252,7 @@ module.exports = {
   getPackageManager: getPackageManager,
   restore: restore,
   restoreTestDir: restoreTestDir,
-  cleanTmp: cleanTmp
+  cleanTmp: cleanTmp,
+  cleanBuildDir: cleanBuildDir
 };
 
