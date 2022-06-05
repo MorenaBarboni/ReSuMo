@@ -101,6 +101,11 @@ function prepare(callback) {
     process.exit(1);
   }
 
+  if(config.tce && config.buildDir === ''){
+    console.error('Build directory is missing.')
+    process.exit(1)
+  }
+
   //Checks the package manager used by the SUT
   let pmConfig = utils.getPackageManager()
   packageManager = pmConfig.packageManager;
