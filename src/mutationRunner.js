@@ -28,9 +28,6 @@ const targetDir = config.targetDir;
 const contractsDir = config.contractsDir;
 const buildDir = config.buildDir;
 const testDir = config.testDir;
-const liveDir = config.liveDir;
-const killedDir = config.killedDir;
-const mutantsDir = config.mutantsDir;
 const contractsGlob = config.contractsGlob;
 const baselineDir = config.baselineDir;
 
@@ -114,9 +111,15 @@ function prepare(callback) {
   console.log(testConfigFile)
   instrumenter.setConfig(testConfigFile);
 
-  mkdirp(liveDir);
-  mkdirp(killedDir);
-  mkdirp(mutantsDir);
+  mkdirp(config.mutantsDir);
+  mkdirp(config.liveDir);
+  mkdirp(config.killedDir);
+  mkdirp(config.timedoutDir);
+  mkdirp(config.stillbornDir);
+  if (config.tce) {
+    mkdirp(config.redundantDir);
+    mkdirp(config.equivalentDir);
+  }
 
   if (fs.existsSync(baselineDir)) {
     rimraf(baselineDir, function () {
@@ -215,6 +218,8 @@ function generateAllMutations(files) {
 function preTest() {
 
   reporter.beginPretest();
+  reporter.setupLog();
+
   utils.cleanBuildDir(); //Remove old compiled artifacts
 
   let ganacheChild = testingInterface.spawnGanache();
@@ -551,6 +556,10 @@ function runTest(mutations, file) {
       } else {
         mutation.status = "stillborn";
       }
+      if(mutation.status !== "redunant"){
+        reporter.writeLog(mutation, null);
+      }
+
       reporter.mutantStatus(mutation);
       mutation.restore();
       testingInterface.killGanache(ganacheChild);
@@ -588,6 +597,7 @@ function tce(mutation, map, originalBytecodeMap) {
     for (const key of map.keys()) {
       if (map.get(key) === mutation.bytecode) {
         mutation.status = "redundant";
+        reporter.writeLog(mutation, key);
         break;
       }
     }

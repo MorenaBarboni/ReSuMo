@@ -27,6 +27,10 @@ These fields determine where ReSuMo stores data during the mutation testing proc
 * ```baselineDir```: path of the directory where ReSuMo must save the baseline of the SUT (.sumo/baseline by default)
 * ```killedDir```: path of the directory where ReSuMo must save the killed mutations (.sumo/killed by default)
 * ```liveDir```: path of the directory where ReSuMo must save the live mutations (.sumo/live by default)
+* ```equivalentdDir```: path of the directory where SuMo must save the equivalent mutations (.sumo/equivalent by default)
+* ```redundantDir```: path of the directory where SuMo must save the redundant mutations (.sumo/redundant by default)
+* ```stillbornDir```: path of the directory where SuMo must save the stillborn mutations (.sumo/stillborn by default)
+* ```timedoutDir```: path of the directory where SuMo must save the timedout mutations (.sumo/timedout by default)
 * ```mutantsDir```: path of the directory where ReSuMo must (optionally) save a copy of each mutated contract (.sumo/mutants by default)
 
 ##### 2) SUT directories
