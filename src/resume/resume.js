@@ -13,8 +13,9 @@ var tests;
 /**
  * Start regression testing
  * @param overwrite overwrite old checksums and dependencies
+ * @param print print log 
  */
-function ress(overwrite) {
+function ress(overwrite, print) {
   fileSys.createAmbient();
 
   //load files
@@ -26,18 +27,21 @@ function ress(overwrite) {
 
   const dependencyGraph = depCalc.buildDependencyGraph(contracts, tests, overwrite);
 
-  console.log("=============================================");
-  console.log(chalk.yellow.bold("> Computing File Differences"))
-  console.log("=============================================");
-  console.log();
+  if (print) {
+    console.log("=============================================");
+    console.log(chalk.yellow.bold("> Computing File Differences"))
+    console.log("=============================================");
+    console.log();
+  }
 
   const changedContracts_paths = diffCalc.checkContracts(contracts, overwrite);
   const changedTests_paths = diffCalc.checkTests(tests, overwrite);
 
-  logger.logPathsOnConsole("Changed contracts", changedContracts_paths);
-  logger.logPathsOnConsole("Changed tests", changedTests_paths);
-  logger.logProgramDifferences(changedContracts_paths, changedTests_paths);
-
+  if (print) {
+    logger.logPathsOnConsole("Changed contracts", changedContracts_paths);
+    logger.logPathsOnConsole("Changed tests", changedTests_paths);
+    logger.logProgramDifferences(changedContracts_paths, changedTests_paths);
+  }
   /*console.log();
   console.log("=============================================");
   console.log(chalk.yellow.bold("> Selecting Contract and Test Files"))
@@ -61,12 +65,12 @@ function ress(overwrite) {
 
   //only changed contracts
   if (contracsHaveChanged && !testsHaveChanged) {
-   /* console.log(
-      chalk.red("Case:") +
-      " " +
-      chalk.green("Only contracts changed since last revision")
-    );
-    console.log();*/
+    /* console.log(
+       chalk.red("Case:") +
+       " " +
+       chalk.green("Only contracts changed since last revision")
+     );
+     console.log();*/
 
     //changed contracts + dependant and dependency contracts of changed contracts
     contractsToBeMutated =
@@ -120,12 +124,12 @@ function ress(overwrite) {
 
   //se ci sono sia contratti che test alterati
   if (contracsHaveChanged && testsHaveChanged) {
-   /* console.log(
-      chalk.red("Case:") +
-      " " +
-      chalk.green("Both contracts and tests changed since last revision")
-    );
-    console.log();*/
+    /* console.log(
+       chalk.red("Case:") +
+       " " +
+       chalk.green("Both contracts and tests changed since last revision")
+     );
+     console.log();*/
 
     contractsToBeMutated =
       remCalc.getChangedContractsPlusDependencyAndDependantContractsOfChangedContractsPlusDependencyContractsOfChangedTests(
@@ -145,9 +149,11 @@ function ress(overwrite) {
         dependencyGraph
       );
   }
- // logger.logPathsOnConsole("Selected contracts", contractsToBeMutated);
+  // logger.logPathsOnConsole("Selected contracts", contractsToBeMutated);
   //logger.logPathsOnConsole("Selected tests", regressionTests);
-  logger.logRTS(contractsToBeMutated, regressionTests);
+  if (print) {
+    logger.logRTS(contractsToBeMutated, regressionTests);
+  }
 }
 
 function getChangedTest() {

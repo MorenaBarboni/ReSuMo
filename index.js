@@ -10,7 +10,6 @@ yargs
   .usage('$0 <cmd> [args]')
   .command('preflight', 'print preflight summary', mutationRunner.preflight)
   .command('mutate', 'save mutants to file', mutationRunner.mutate)
-  .command('regression', 'starting regression testing process...', resume.regressionTesting)
   .command('pretest', 'run tests on the original contracts', (argv) => {
     mutationRunner.preTest()
   })

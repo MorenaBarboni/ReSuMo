@@ -10,6 +10,7 @@ const mkdirp = require("mkdirp");
 const copy = require("recursive-copy");
 const { testsGlob } = require("./config");
 const sumoDir = config.sumoDir;
+const buildDir = config.buildDir;
 const resumeDir = config.resumeDir;
 const targetDir = config.targetDir;
 const baselineDir = config.baselineDir;
@@ -96,24 +97,19 @@ function getPackageManager() {
 
 //Checks the testing framework used by the SUT
 function getTestConfig() {
-  let config = {};
+  let targetConfigFile = {};
 
   for (const configFile of testConfigGlob) {
     if (fs.existsSync(targetDir + configFile)) {
-      config.targetConfigFile = configFile;
-      if (!config.targetConfigFile) {
+      targetConfigFile = configFile;
+      if (!targetConfigFile) {
         console.error("Target project does not contain a suitable test configuration file.");
         process.exit(1);
-      }
-      if (configFile.includes("truffle")) {
-        config.testingFramework = "truffle";
-      } else {
-        config.testingFramework = "hardhat";
       }
       break;
     }
   }
-  return config;
+  return targetConfigFile;
 }
 
 /**
@@ -140,6 +136,18 @@ function cleanResumeFromCLI() {
       rl.close()
     }
   })
+}
+
+/**
+ * Cleans the build dir
+ */
+ function cleanBuildDir() {
+  if (fs.existsSync(buildDir)) {
+    fsExtra.emptyDirSync(buildDir);
+    console.log("Build directory cleaned.");
+  } else {
+    console.log("Build directory is already empty.");
+  }
 }
 
 /**
@@ -173,7 +181,7 @@ function restore() {
       if (err) throw err;
 
       for (const file of files) {
-        let relativeFilePath = file.split(".sumo/baseline/contracts")[1];
+        let relativeFilePath = file.split(baselineDir+"/contracts")[1];
         let fileDir = path.dirname(relativeFilePath);
         fs.mkdir(contractsDir + fileDir, { recursive: true }, function (err) {
           if (err) return cb(err);
@@ -190,7 +198,7 @@ function restore() {
       if (err) throw err;
 
       for (const file of files) {
-        let relativeFilePath = file.split(".sumo/baseline/test")[1];
+        let relativeFilePath = file.split(baselineDir+"/test")[1];
         let fileDir = path.dirname(relativeFilePath);
         fs.mkdir(testDir + fileDir, { recursive: true }, function (err) {
           if (err) return cb(err);
@@ -227,7 +235,7 @@ function cleanTmp() {
 * Restore test files
 */
 function restoreTestDir() {
-  const baselineTest = "./.resume/baseline/tests";
+  const baselineTest = baselineDir+"/test";
   if (fs.existsSync(baselineTest)) {
     fsExtra.copySync(baselineTest, testDir);
     console.log("Test files restored");
@@ -245,6 +253,7 @@ module.exports = {
   getPackageManager: getPackageManager,
   restore: restore,
   restoreTestDir: restoreTestDir,
-  cleanTmp: cleanTmp
+  cleanTmp: cleanTmp,
+  cleanBuildDir: cleanBuildDir
 };
 

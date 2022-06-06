@@ -8,15 +8,13 @@ const testingTimeOutInSec=config.testingTimeOutInSec
 /**
  * Spawns a new compile process through the interface provided by the connected testing framework 
  * @param packageManager The package manager used within the SUT
- * @param testingFramework The testing framework used within the SUT
  * @param runScript the run script command of the packageManager
  */
-function spawnCompile(packageManager, testingFramework, runScript) {
+function spawnCompile(packageManager, runScript) {
     var compileChild;
   
     //Run a custom compile script
-    if (config.customTestScript) {
-  
+    if (config.customTestScript) { 
       if (process.platform === "win32") {
         compileChild = spawnSync(packageManager + ".cmd", [runScript, "compile"], {
           stdio: "inherit",
@@ -28,9 +26,9 @@ function spawnCompile(packageManager, testingFramework, runScript) {
     }   //Spawn a default compile script
     else {
       if (process.platform === "win32") {
-        compileChild = spawnSync(testingFramework + ".cmd", ["compile"], { stdio: "inherit", cwd: targetDir });
+        compileChild = spawnSync("truffle.cmd", ["compile"], { stdio: "inherit", cwd: targetDir });
       } else if (process.platform === "linux" || process.platform === "darwin") {
-        compileChild = spawnSync(testingFramework, ["compile"], { stdio: "inherit", cwd: targetDir });
+        compileChild = spawnSync("truffle", ["compile"], { stdio: "inherit", cwd: targetDir });
       }
     }
     return compileChild.status === 0;
@@ -40,10 +38,9 @@ function spawnCompile(packageManager, testingFramework, runScript) {
   /**
  * Spawns a new test process through the interface provided by the connected testing framework 
  * @param packageManager The package manager used within the SUT
- * @param testingFramework The testing framework used within the SUT
  * @param runScript the run script command of the packageManager
  */
-  function spawnTest(packageManager, testingFramework, runScript) {
+  function spawnTest(packageManager, runScript) {
   
     var testChild;
     //Run a custom test script
@@ -77,11 +74,19 @@ function spawnCompile(packageManager, testingFramework, runScript) {
     }
     //Spawn a default test process
     else {
-      if (process.platform === "win32") {
-        testChild = spawnSync(testingFramework + ".cmd", ["test"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
-      } else if (process.platform === "linux" || process.platform === "darwin") {
-        testChild = spawnSync(testingFramework, ["test"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
-      }
+      if(config.bail && !config.regression){
+        if (process.platform === "win32") {
+          testChild = spawnSync("truffle.cmd", ["test", "-b"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec * 1000) });
+        } else if (process.platform === "linux" || process.platform === "darwin") {
+          testChild = spawnSync("truffle", ["test", "-b"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec * 1000) });
+        }
+      }else{
+        if (process.platform === "win32") {
+          testChild = spawnSync("truffle.cmd", ["test"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
+        } else if (process.platform === "linux" || process.platform === "darwin") {
+          testChild = spawnSync("truffle", ["test"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
+        }
+      }     
     }
   
     let status;
