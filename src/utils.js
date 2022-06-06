@@ -10,6 +10,7 @@ const mkdirp = require("mkdirp");
 const copy = require("recursive-copy");
 const { testsGlob } = require("./config");
 const sumoDir = config.sumoDir;
+const buildDir = config.buildDir;
 const resumeDir = config.resumeDir;
 const targetDir = config.targetDir;
 const baselineDir = config.baselineDir;
@@ -141,8 +142,8 @@ function cleanResumeFromCLI() {
  * Cleans the build dir
  */
  function cleanBuildDir() {
-  if (fs.existsSync(config.buildDir)) {
-    fsExtra.emptyDirSync(config.buildDir);
+  if (fs.existsSync(buildDir)) {
+    fsExtra.emptyDirSync(buildDir);
     console.log("Build directory cleaned.");
   } else {
     console.log("Build directory is already empty.");
@@ -180,7 +181,7 @@ function restore() {
       if (err) throw err;
 
       for (const file of files) {
-        let relativeFilePath = file.split(".sumo/baseline/contracts")[1];
+        let relativeFilePath = file.split(baselineDir+"/contracts")[1];
         let fileDir = path.dirname(relativeFilePath);
         fs.mkdir(contractsDir + fileDir, { recursive: true }, function (err) {
           if (err) return cb(err);
@@ -197,7 +198,7 @@ function restore() {
       if (err) throw err;
 
       for (const file of files) {
-        let relativeFilePath = file.split(".sumo/baseline/test")[1];
+        let relativeFilePath = file.split(baselineDir+"/test")[1];
         let fileDir = path.dirname(relativeFilePath);
         fs.mkdir(testDir + fileDir, { recursive: true }, function (err) {
           if (err) return cb(err);
@@ -234,7 +235,7 @@ function cleanTmp() {
 * Restore test files
 */
 function restoreTestDir() {
-  const baselineTest = ".sumo/baseline/test";
+  const baselineTest = baselineDir+"/test";
   if (fs.existsSync(baselineTest)) {
     fsExtra.copySync(baselineTest, testDir);
     console.log("Test files restored");
