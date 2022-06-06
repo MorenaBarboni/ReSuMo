@@ -101,7 +101,7 @@ function toCSV() {
   map.clear()
   columnName=[]
   testName=[]
-  console.log("I'm writing 'report.csv' file")
+  //console.log("Writing report to .resume/report.csv")
   populateMap();
   const headers = columnName
     .join(",");
@@ -112,7 +112,7 @@ function toCSV() {
   ].join("\n");
   if (!fs.existsSync(".resume/report.csv")) {
     fs.writeFileSync(".resume/report.csv", csv);
-    console.log("report.csv Written");
+    //console.log("Report writtend to .resume/report.csv");
   } else {
     csvReader.read(map, testName);
   }

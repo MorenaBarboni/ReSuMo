@@ -108,7 +108,6 @@ function prepare(callback) {
   runScript = pmConfig.runScript;
 
   let testConfigFile = utils.getTestConfig();
-  console.log(testConfigFile)
   instrumenter.setConfig(testConfigFile);
 
   mkdirp(config.mutantsDir);
@@ -218,10 +217,23 @@ function generateAllMutations(files) {
 function preTest() {
 
   reporter.beginPretest();
+
+  //Check if there are contracts under mutation
+  let contractsUnderMutation;
+  if (config.regression) {
+    resume.regressionTesting(false, false);
+    contractsUnderMutation = resumeContractSelection();
+  }else{
+    contractsUnderMutation = defaultContractSelection();
+  }
+  if(contractsUnderMutation.length == 0){
+    console.log("Nothing to test.")
+    process.exit(1)
+  }
+
   reporter.setupLog();
-
   utils.cleanBuildDir(); //Remove old compiled artifacts
-
+ 
   let ganacheChild = testingInterface.spawnGanache();
   const isCompiled = testingInterface.spawnCompile(packageManager, runScript);
 
@@ -256,7 +268,7 @@ function test() {
       //Select contracts to mutate and tests to be run
       let changedContracts;
       if (config.regression) {
-        resume.regressionTesting(true);
+        resume.regressionTesting(true, true);
         changedContracts = resumeContractSelection();
         let testsToBeRun = resumeTestSelection();
         unlinkTests(testsToBeRun);
@@ -352,7 +364,6 @@ function resumeContractSelection() {
 
 /**
  * Regression selection of contracts to mutate
- * @param overwrite overwrite regression artefacts of previous revision
  * @returns a list of tests to be run
  */
 function resumeTestSelection() {
@@ -409,31 +420,6 @@ function unlinkTests(regrTests) {
     }
   }
 }
-
-function regression() {
-  if (!config.regression) {
-    console.error("Regression mutation testing is currently disabled.");
-    process.exit(1);
-  }
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-
-  rl.question("If you run regression mutation testing the '.resume' folder will be overwritten. do yant to proceed? y/n > ", function (response) {
-    response = response.trim()
-    response = response.toLowerCase()
-    if (response === 'y' || response === 'yes') {
-      resume.regressionTesting();
-      rl.close()
-    }
-    else {
-      rl.close()
-    }
-  })
-}
-
 
 function mutationsByHash(mutations) {
   return mutations.reduce((obj, mutation) => {
@@ -632,7 +618,7 @@ function generateTestExcel() {
 
 module.exports = {
   test: test, preflight, preflight, mutate: preflightAndSave, diff: diff, list: list,
-  enable: enableOperator, disable: disableOperator, preTest: preTest, generateExcel: generateTestExcel, resume: regression
+  enable: enableOperator, disable: disableOperator, preTest: preTest, generateExcel: generateTestExcel
 };
 
 
