@@ -22,16 +22,10 @@ Before using ReSuMo you must specify your desired configuration in the [config.j
 ##### 1) ReSuMo directories
 These fields determine where ReSuMo stores data during the mutation testing process. Most paths are already set by default:
 * ```sumoDir```: path of the directory where ReSuMo must save the mutation testing artifacts (.sumo by default)
-* ```absoluteSumoDir```: absolute path of the sumoDir
+* ```absoluteResultsDir```: absolute path of the resultsDir
 * ```resumeDir```: path of the directory where ReSuMo must save the regression testing artifacts (.resume by default)
 * ```baselineDir```: path of the directory where ReSuMo must save the baseline of the SUT (.sumo/baseline by default)
-* ```killedDir```: path of the directory where ReSuMo must save the killed mutations (.sumo/killed by default)
-* ```liveDir```: path of the directory where ReSuMo must save the live mutations (.sumo/live by default)
-* ```equivalentdDir```: path of the directory where SuMo must save the equivalent mutations (.sumo/equivalent by default)
-* ```redundantDir```: path of the directory where SuMo must save the redundant mutations (.sumo/redundant by default)
-* ```stillbornDir```: path of the directory where SuMo must save the stillborn mutations (.sumo/stillborn by default)
-* ```timedoutDir```: path of the directory where SuMo must save the timedout mutations (.sumo/timedout by default)
-* ```mutantsDir```: path of the directory where ReSuMo must (optionally) save a copy of each mutated contract (.sumo/mutants by default)
+* ```resultsDir```: path of the directory where ReSuMo must save results (.sumo/results by default)
 
 ##### 2) SUT directories
 These fields specify the path to different artefacts of the System Under Test:
@@ -84,7 +78,7 @@ If you are using a different testing framework (e.g, Hardhat) you must manually 
 mocha = {
       reporter: "mochawesome",
       reporterOptions: {
-            reportDir: absoluteSumoDir + "/mochawesome-report",
+            reportDir: absoluteResultsDir + "/mochawesome-report",
             html: false
       }
 }
@@ -102,8 +96,8 @@ Before starting the mutation process you can choose which mutation operators to 
 
 #### Viewing the available mutations
 Once everything is set up you can use:
-* ```npm run sumo preflight``` To view the available mutations and save a preliminary report  to ./sumo/report.txt
-* ```npm run sumo mutate``` To view the available mutations, save a preliminary report  to ./sumo/report.txt, and save a copy of each mutant to ./sumo/mutants
+* ```npm run sumo preflight``` To view the available mutations and save a preliminary report  to ./sumo/results/report.txt
+* ```npm run sumo mutate``` To view the available mutations, save a preliminary report  to ./sumo/results/report.txt, and save a copy of each mutant to ./sumo/results/mutants
 
 #### Running Mutation Testing
 Use:

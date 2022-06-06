@@ -6,10 +6,7 @@ const mkdirp = require("mkdirp");
 const parser = require("@solidity-parser/parser");
 const { parse } = require("path");
 const chalk = require("chalk");
-const readline = require('readline');
 const rimraf = require('rimraf')
-
-
 
 //SuMo modules
 const Reporter = require("./reporter");
@@ -22,14 +19,21 @@ const resume = require("./resume/resume");
 const csvWriter = require("./resume/utils/csvWriter");
 
 //SuMo configuration
-const absoluteSumoDir = config.absoluteSumoDir;
-const sumoDir = config.sumoDir;
+const absoluteResultsDir = config.absoluteResultsDir;
+const resultsDir = config.resultsDir
+const baselineDir = config.baselineDir;
 const targetDir = config.targetDir;
 const contractsDir = config.contractsDir;
 const buildDir = config.buildDir;
 const testDir = config.testDir;
 const contractsGlob = config.contractsGlob;
-const baselineDir = config.baselineDir;
+const equivalentDir = resultsDir + '/equivalent';
+const liveDir = resultsDir + '/live';
+const mutantsDir = resultsDir + '/mutants';
+const redundantDir = resultsDir + '/redundant';
+const stillbornDir = resultsDir + '/stillborn';
+const timedoutDir = resultsDir + '/timedout';
+const killedDir = resultsDir + '/killed';
 
 var packageManager;
 var runScript;
@@ -92,14 +96,9 @@ const mutGen = new mutationGenerator.CompositeOperator([
  */
 function prepare(callback) {
 
-  if (absoluteSumoDir === "" || targetDir === "" || contractsDir === "" || testDir === "") {
+  if (absoluteResultsDir === "" || targetDir === "" || contractsDir === "" || testDir === "" || (config.tce && buildDir === '')) {
     console.error("SuMo configuration is incomplete or missing.");
     process.exit(1);
-  }
-
-  if (config.tce && buildDir === '') {
-    console.error('Build directory is missing.')
-    process.exit(1)
   }
 
   //Checks the package manager used by the SUT
@@ -110,14 +109,14 @@ function prepare(callback) {
   let testConfigFile = utils.getTestConfig();
   instrumenter.setConfig(testConfigFile);
 
-  mkdirp(config.mutantsDir);
-  mkdirp(config.liveDir);
-  mkdirp(config.killedDir);
-  mkdirp(config.timedoutDir);
-  mkdirp(config.stillbornDir);
+  mkdirp(mutantsDir);
+  mkdirp(liveDir);
+  mkdirp(killedDir);
+  mkdirp(timedoutDir);
+  mkdirp(stillbornDir);
   if (config.tce) {
-    mkdirp(config.redundantDir);
-    mkdirp(config.equivalentDir);
+    mkdirp(redundantDir);
+    mkdirp(equivalentDir);
   }
 
   if (fs.existsSync(baselineDir)) {
@@ -131,7 +130,7 @@ function prepare(callback) {
     })
   } else {
     mkdirp(baselineDir, () =>
-    copy(targetDir + testConfigFile, baselineDir + testConfigFile,
+      copy(targetDir + testConfigFile, baselineDir + testConfigFile,
         copy(testDir, baselineDir + '/test', { dot: true },
           copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
     );
@@ -144,7 +143,9 @@ function prepare(callback) {
 function preflight() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
+
       if (err) throw err;
+
       let contractsUnderMutation;
       if (config.regression) {
         resume.regressionTesting(false);
@@ -223,17 +224,15 @@ function preTest() {
   if (config.regression) {
     resume.regressionTesting(false, false);
     contractsUnderMutation = resumeContractSelection();
-  }else{
-    contractsUnderMutation = defaultContractSelection();
-  }
-  if(contractsUnderMutation.length == 0){
-    console.log("Nothing to test.")
-    process.exit(1)
+    if (contractsUnderMutation.length == 0) {
+      console.log("Nothing to test.")
+      process.exit(1)
+    }
   }
 
   reporter.setupLog();
   utils.cleanBuildDir(); //Remove old compiled artifacts
- 
+
   let ganacheChild = testingInterface.spawnGanache();
   const isCompiled = testingInterface.spawnCompile(packageManager, runScript);
 
@@ -262,6 +261,10 @@ function test() {
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
 
+      if (!files.length) {
+        console.log("Contract directory is empty")
+      }
+
       //Run the pre-test
       preTest();
 
@@ -274,7 +277,7 @@ function test() {
         unlinkTests(testsToBeRun);
         reporter.printFilesUnderTest(changedContracts, testsToBeRun, config.testUtils);
       } else {
-        changedContracts = defaultContractSelection(files);        
+        changedContracts = defaultContractSelection(files);
         reporter.printFilesUnderTest(changedContracts, null, null);
       }
 
@@ -542,7 +545,7 @@ function runTest(mutations, file) {
       } else {
         mutation.status = "stillborn";
       }
-      if(mutation.status !== "redunant"){
+      if (mutation.status !== "redunant") {
         reporter.writeLog(mutation, null);
       }
 
@@ -610,7 +613,7 @@ function exploreDirectories(Directory) {
  Saves the test results extracted from the  mocha-report dir to an excel file
  */
 function generateTestExcel() {
-  if (fs.existsSync(sumoDir + '/mochawesome-report'))
+  if (fs.existsSync(resultsDir + '/mochawesome-report'))
     reporter.saveTestData();
   else
     console.log('The mochawesome-report dir does not exist!')

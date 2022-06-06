@@ -39,12 +39,6 @@ Instrumenter.prototype.instrumentConfig = function() {
 };
 
 
-/* Instrument a Truffle configuration file */
-function instrumentTruffleConfig(file) {
-
- 
-}
-
 /* Restore original config file */
 Instrumenter.prototype.restoreConfig = function() {
   console.log("Restoring " + config.targetDir + this.testConfigFile);
@@ -59,7 +53,7 @@ function addMochawesome(testConfigFile) {
 
     testConfigFile.mocha.reporter = "mochawesome";
     testConfigFile.mocha.reporterOptions = {
-      reportDir: config.absoluteSumoDir + "/mochawesome-report",
+      reportDir: config.absoluteResultsDir + "/mochawesome-report",
       html: false,
       quiet: true
     };
@@ -68,7 +62,7 @@ function addMochawesome(testConfigFile) {
     testConfigFile.mocha = {
       reporter: "mochawesome",
       reporterOptions: {
-        reportDir: config.absoluteSumoDir + "/mochawesome-report",
+        reportDir: config.absoluteResultsDir + "/mochawesome-report",
         html: false,
         quiet: false
       }
