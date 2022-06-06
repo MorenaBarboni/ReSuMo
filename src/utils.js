@@ -234,7 +234,7 @@ function cleanTmp() {
 * Restore test files
 */
 function restoreTestDir() {
-  const baselineTest = "./.resume/baseline/tests";
+  const baselineTest = ".sumo/baseline/test";
   if (fs.existsSync(baselineTest)) {
     fsExtra.copySync(baselineTest, testDir);
     console.log("Test files restored");
