@@ -262,7 +262,8 @@ function test() {
       if (err) throw err;
 
       if (!files.length) {
-        console.log("Contract directory is empty")
+        console.error("Contract directory is empty")
+        process.exit()
       }
 
       //Run the pre-test
@@ -331,7 +332,7 @@ function defaultContractSelection(files) {
   for (const file of files) {
     let skipContract = false;
     for (const path of config.skipContracts) {
-      if (file.startsWith(path)) {
+      if (file.startsWith(path) && path !== "") {
         skipContract = true;
         break;
       }
@@ -394,7 +395,7 @@ function resumeTestSelection() {
       if (keepTest) {
         //If the test must be skipped
         for (const path of config.skipTests) {
-          if (originalTest.path.startsWith(path)) {
+          if (originalTest.path.startsWith(path) && path !== "") {
             //console.log("Skipped test > " + originalTest.path);
             keepTest = false;
             break;
