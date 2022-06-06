@@ -354,7 +354,7 @@ function resumeContractSelection() {
   for (const file of changedContracts) {
     let skipContract = false;
     for (const path of config.skipContracts) {
-      if (file.startsWith(path)) {
+      if (file.startsWith(path) && path !== "") {
         skipContract = true;
         break;
       }
@@ -381,7 +381,7 @@ function resumeTestSelection() {
 
     //If the test is an util it will not be deleted
     for (const path of config.testUtils) {
-      if (originalTest.path.startsWith(path)) {
+      if (originalTest.path.startsWith(path) && path !== "") {
         keepTest = true;
         break;
       }
