@@ -1,6 +1,6 @@
 const fs = require("fs");
 const config = require("./config");
-
+const baselineDir = config.sumoDir +'/baseline';
 
 function Instrumenter() {
   this.testConfigFile;
@@ -42,7 +42,7 @@ Instrumenter.prototype.instrumentConfig = function() {
 /* Restore original config file */
 Instrumenter.prototype.restoreConfig = function() {
   console.log("Restoring " + config.targetDir + this.testConfigFile);
-  const original = fs.readFileSync("./" + config.baselineDir + this.testConfigFile, "utf8");
+  const original = fs.readFileSync("./" + baselineDir + this.testConfigFile, "utf8");
   fs.writeFileSync(config.targetDir + this.testConfigFile, original, "utf8");  
 };
 

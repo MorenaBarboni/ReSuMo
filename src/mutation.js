@@ -6,7 +6,7 @@ const path = require("path");
 const { mutantsDir, saveMutants } = require("./config");
 const config = require("./config");
 
-const baselineDir = config.baselineDir;
+const baselineDir = config.sumoDir +'/baseline';
 const contractsDir = config.contractsDir;
 
 function splice(str, start, length, replacement) {

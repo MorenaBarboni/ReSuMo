@@ -21,7 +21,7 @@ const csvWriter = require("./resume/utils/csvWriter");
 //SuMo configuration
 const absoluteResultsDir = config.absoluteResultsDir;
 const resultsDir = config.resultsDir
-const baselineDir = config.baselineDir;
+const baselineDir = config.sumoDir +'/baseline';
 const targetDir = config.targetDir;
 const contractsDir = config.contractsDir;
 const buildDir = config.buildDir;
