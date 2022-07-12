@@ -40,7 +40,7 @@ Reporter.prototype.beginBytecode = function () {
 Reporter.prototype.beginMutationTesting = function () {
   console.log("=============================================");
   console.log(chalk.yellow.bold(" >  👾 Starting Mutation Testing 👾"))
-  console.log("============================================="); 
+  console.log("=============================================");
 };
 
 
@@ -61,20 +61,20 @@ Reporter.prototype.beginCompile = function (mutant) {
 };
 
 //Setup sync log
-Reporter.prototype.setupLog = function() { 
-  fs.writeFileSync(resultsDir+"/log.txt", "################################################ LOG ################################################", function (err) {
+Reporter.prototype.setupLog = function () {
+  fs.writeFileSync(resultsDir + "/log.txt", "################################################ LOG ################################################", function (err) {
     if (err) return console.log(err);
-  }) 
-  fs.writeFileSync(resultsDir+"/log.txt", "hash; file; operator; start; end; status; isRedundantTo; testingTime; \n", function (err) {
+  })
+  fs.writeFileSync(resultsDir + "/log.txt", "hash; file; operator; start; end; status; isRedundantTo; testingTime; \n", function (err) {
     if (err) return console.log(err);
-  }) 
+  })
 }
 
 //Write sync log
-Reporter.prototype.writeLog = function(mutant, hashOfRedundant) { 
-  fs.appendFileSync(resultsDir+"/log.txt", mutant.hash() +"; " +mutant.file + "; " +mutant.operator + "; " +mutant.start + "; " +mutant.end + "; " +mutant.status + "; " +hashOfRedundant+ "; "  +mutant.testingTime +'\n' , function (err) {
+Reporter.prototype.writeLog = function (mutant, hashOfRedundant) {
+  fs.appendFileSync(resultsDir + "/log.txt", mutant.hash() + "; " + mutant.file + "; " + mutant.operator + "; " + mutant.start + "; " + mutant.end + "; " + mutant.status + "; " + hashOfRedundant + "; " + mutant.testingTime + '\n', function (err) {
     if (err) return console.log(err);
-  }) 
+  })
 }
 
 //Set the status of a mutant
@@ -83,21 +83,21 @@ Reporter.prototype.mutantStatus = function (mutant) {
     case "killed":
       this.killed.push(mutant);
       console.log("Mutant " + this.chalkMutant(mutant) + " was killed by tests.");
-      fs.writeFileSync(resultsDir + "/killed/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function(err) {
+      fs.writeFileSync(resultsDir + "/killed/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
         if (err) return console.log(err);
       });
       break;
     case "live":
       this.survived.push(mutant);
       console.log("Mutant " + this.chalkMutant(mutant) + " survived testing.");
-      fs.writeFileSync(resultsDir + "/live/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function(err) {
+      fs.writeFileSync(resultsDir + "/live/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
         if (err) return console.log(err);
       });
       break;
     case "stillborn":
       this.stillborn.push(mutant);
       console.log("Mutant " + this.chalkMutant(mutant) + " is stillborn.");
-      fs.writeFileSync(resultsDir + "/stillborn/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function(err) {
+      fs.writeFileSync(resultsDir + "/stillborn/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
         if (err) return console.log(err);
       });
       break;
@@ -106,7 +106,7 @@ Reporter.prototype.mutantStatus = function (mutant) {
       console.log(
         "Mutant " + this.chalkMutant(mutant) + " is equivalent."
       );
-      fs.writeFileSync(resultsDir + "/equivalent/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function(err) {
+      fs.writeFileSync(resultsDir + "/equivalent/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
         if (err) return console.log(err);
       });
       break;
@@ -115,7 +115,7 @@ Reporter.prototype.mutantStatus = function (mutant) {
       console.log(
         "Mutant " + this.chalkMutant(mutant) + " has timed out."
       );
-      fs.writeFileSync(resultsDir + "/timedout/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function(err) {
+      fs.writeFileSync(resultsDir + "/timedout/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
         if (err) return console.log(err);
       });
       break;
@@ -124,7 +124,7 @@ Reporter.prototype.mutantStatus = function (mutant) {
       console.log(
         "Mutant " + this.chalkMutant(mutant) + " is redundant."
       );
-      fs.writeFileSync(resultsDir + "/redundant/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function(err) {
+      fs.writeFileSync(resultsDir + "/redundant/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
         if (err) return console.log(err);
       });
       break;
@@ -163,51 +163,29 @@ Reporter.prototype.printFilesUnderTest = function (contracts, tests) {
   }
   console.log();
 
-  if (!tests) {
-    console.log("Tests to be run : " + chalk.green("all"));
-    console.log();
-  }
+  const nt = tests.regressionTests.length;
+  if (nt == 0) console.log("Tests to be run : " + chalk.green("none"));
   else {
+    console.log("Tests to be run : (" + nt + "):");
 
-    let testUtils = [];
-    let regTests = [];
-
-   
-      for (const t of tests) {
-        if (config.testUtils && config.testUtils !== "") {
-          if (t.startsWith(config.testUtils)) {
-            testUtils.push(t);
-          }else{
-            regTests.push(t);
-          }
-        }else{
-          regTests.push(t);
-        }        
-      }
-    
-    const nt = regTests.length;
-    if (nt == 0) console.log("Tests to be run : " + chalk.green("none"));
-    else {
-      console.log("Tests to be run : (" + nt + "):");
-
-      regTests.forEach((t) => {
-        console.log(
-          "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
-        );
-      });
-    }
-    console.log();
-
-    const nu = testUtils.length;
-    console.log("Tests utils : (" + nu + "):");
-
-    testUtils.forEach((t) => {
+    tests.regressionTests.forEach((t) => {
       console.log(
         "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
       );
-    });  
-    console.log();
-  }  
+    });
+  }
+  console.log();
+
+  const nu = tests.utilsTests.length;
+  console.log("Tests utils : (" + nu + "):");
+
+  tests.utilsTests.forEach((t) => {
+    console.log(
+      "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
+    );
+  });
+  console.log();
+
 }
 
 
@@ -324,7 +302,7 @@ Reporter.prototype.testSummary = function () {
 
 //Setup test report
 Reporter.prototype.setupReport = function () {
-  fs.writeFileSync(resultsDir+"/report.txt", "################################################ REPORT ################################################\n\n------------------------------------------- GENERATED MUTANTS ------------------------------------------ \n", function (err) {
+  fs.writeFileSync(resultsDir + "/report.txt", "################################################ REPORT ################################################\n\n------------------------------------------- GENERATED MUTANTS ------------------------------------------ \n", function (err) {
     if (err) return console.log(err);
   });
 };
@@ -332,14 +310,14 @@ Reporter.prototype.setupReport = function () {
 //Save generated mutations to report
 Reporter.prototype.saveGeneratedMutants = function (fileString, mutantString) {
 
-  fs.appendFileSync(resultsDir+"/report.txt", fileString + mutantString, { "flags": "a" }, function (err) {
+  fs.appendFileSync(resultsDir + "/report.txt", fileString + mutantString, { "flags": "a" }, function (err) {
     if (err) return console.log(err);
   });
 };
 
 //Save mutants generation time to report
 Reporter.prototype.saveGenerationTime = function (mutationsLength, generationTime) {
-  fs.appendFileSync(resultsDir+"/report.txt", "\n" + mutationsLength + " mutant(s) found in " + generationTime + " seconds. \n", function (err) {
+  fs.appendFileSync(resultsDir + "/report.txt", "\n" + mutationsLength + " mutant(s) found in " + generationTime + " seconds. \n", function (err) {
     if (err) return console.log(err);
   });
 };
@@ -385,7 +363,7 @@ Reporter.prototype.printTestReport = function (time) {
 
   printString = printString + "\n\n Mutation Score = " + mutationScore;
 
-  fs.appendFileSync(resultsDir+"/report.txt", printString, { "flags": "a" }, function (err) {
+  fs.appendFileSync(resultsDir + "/report.txt", printString, { "flags": "a" }, function (err) {
     if (err) return console.log(err);
   });
 };
@@ -544,7 +522,7 @@ Reporter.prototype.saveOperatorsResults = function () {
     worksheet.cell(i + 2, 11)
       .number(time / 60000)
       .style(style)
-    workbook.write("./"+resultsDir+"/operators.xlsx");
+    workbook.write("./" + resultsDir + "/operators.xlsx");
   }
 };
 
@@ -741,7 +719,7 @@ Reporter.prototype.saveTestData = function () {
     }
     counter++
   }
-  workbook.write("./"+resultsDir+"/testData.xlsx");
+  workbook.write("./" + resultsDir + "/testData.xlsx");
 }
 
 

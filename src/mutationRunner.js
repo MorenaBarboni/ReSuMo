@@ -21,7 +21,7 @@ const csvWriter = require("./resume/utils/csvWriter");
 //SuMo configuration
 const absoluteResultsDir = config.absoluteResultsDir;
 const resultsDir = config.resultsDir
-const baselineDir = config.sumoDir +'/baseline';
+const baselineDir = config.sumoDir + '/baseline';
 const targetDir = config.targetDir;
 const contractsDir = config.contractsDir;
 const buildDir = config.buildDir;
@@ -151,6 +151,7 @@ function preflight() {
         resume.regressionTesting(false);
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
+
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       } else {
         contractsUnderMutation = defaultContractSelection(files);
@@ -371,7 +372,11 @@ function resumeContractSelection() {
  * @returns a list of tests to be run
  */
 function resumeTestSelection() {
-  let regressionTests = [];
+  let tests = {
+    regressionTests: [],
+    utilsTests: [],
+  }
+
   let changedTests = resume.getChangedTest();
   let originalTests = resume.getOriginalTest();
 
@@ -380,9 +385,9 @@ function resumeTestSelection() {
     let keepTest = false;
 
     //If the test is an util it will not be deleted
-    for (const path of config.testUtils) {       
+    for (const path of config.testUtils) {
       if (originalTest.path.startsWith(path) && path !== "") {
-        console.log("I will keep: " +originalTest.path)
+        tests.utilsTests.push(originalTest.path)
         keepTest = true;
         break;
       }
@@ -403,21 +408,21 @@ function resumeTestSelection() {
           }
         }
       }
-    }
-    if (keepTest) {
-      regressionTests.push(originalTest.path);
+      if (keepTest) {
+        tests.regressionTests.push(originalTest.path);
+      }
     }
   }
-  return regressionTests;
+  return tests;
 }
 
 /**
  * Unliks tests that must not be run
- * @param regrTests regression tests to be kept
+ * @param tests regression tests and util tests to be kept
  * 
  */
-function unlinkTests(regrTests) {
-  let regressionTests = regrTests;
+function unlinkTests(tests) {
+  let regressionTests = tests.regressionTests.concat(tests.utilsTests);
   let originalTests = resume.getOriginalTest();
   for (const originalTest of originalTests) {
     if (!regressionTests.includes(originalTest.path)) {
