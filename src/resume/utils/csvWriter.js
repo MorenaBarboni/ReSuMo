@@ -1,8 +1,9 @@
 const fs = require("fs");
 const config = require("../../config");
 const csvReader = require("./csvReader");
-const mutationJson = config.absoluteSumoDir + "/mutations.json";
-const mochaJson = config.absoluteSumoDir + "/mochawesome-report/mochawesome-";
+const mutationJson = config.absoluteResultsDir + "/mutations.json";
+const mochawesomeDir = config.absoluteResultsDir + "/mochawesome-report/";
+const mochaJson = config.absoluteResultsDir + "/mochawesome-report/mochawesome-";
 var map = new Map();
 var columnName = [];
 var testName = [];
@@ -22,48 +23,52 @@ function readJSON(inputPath) {
  * The hash is used as a <b>key</b> and an array made by contract name, operator and all test results is used as a <b>value</b>
  */
 function populateMap() {
-  const numberSuite = readJSON(mochaJson + readJSON(mutationJson)[0].hash + ".json").results[0].suites.length;
-  var mochaMutants = readJSON(mutationJson).map(hash => readJSON(mochaJson + hash.hash + ".json"));
-  columnName.push("hash");
-  columnName.push("contract");
-  columnName.push("operator");
-  for (var hash of readJSON(mutationJson).map(hash => hash.hash)) {
+  if (fs.existsSync(mochawesomeDir)) {
+    const numberSuite = readJSON(mochaJson + readJSON(mutationJson)[0].hash + ".json").results[0].suites.length;
+    var mochaMutants = readJSON(mutationJson).map(hash => readJSON(mochaJson + hash.hash + ".json"));
+    columnName.push("hash");
+    columnName.push("contract");
+    columnName.push("operator");
+    for (var hash of readJSON(mutationJson).map(hash => hash.hash)) {
 
-    var arr = [];
-    readJSON(mutationJson).map(mutation => {
-      if (mutation.hash === hash) {
-        arr.push(mutation.file.substring(mutation.file.lastIndexOf("/") + 1));
+      var arr = [];
+      readJSON(mutationJson).map(mutation => {
+        if (mutation.hash === hash) {
+          arr.push(mutation.file.substring(mutation.file.lastIndexOf("/") + 1));
+        }
+      });
+      readJSON(mutationJson).map(mutation => {
+        if (mutation.hash === hash) {
+          arr.push(mutation.operator);
+        }
+      });
+      var count = 0;
+      while (count < numberSuite) {
+        var resToAdd = [];
+        var allRes = mochaMutants.map(item => item.results[0].suites[count].file);
+        allRes.filter(item => {
+          if (!resToAdd.includes(item)) {
+            resToAdd.push(item);
+          }
+        });
+        allRes.filter(item => {
+          if (!columnName.includes(item)) {
+            columnName.push(item);
+            testName.push(item);
+          }
+        });
+        var res = findTestRes(resToAdd[0], hash);
+        res.map(item => {
+          if (item !== undefined) {
+            arr.push(item);
+          }
+        });
+        count++;
       }
-    });
-    readJSON(mutationJson).map(mutation => {
-      if (mutation.hash === hash) {
-        arr.push(mutation.operator);
-      }
-    });
-    var count = 0;
-    while (count < numberSuite) {
-      var resToAdd = [];
-      var allRes = mochaMutants.map(item => item.results[0].suites[count].file);
-      allRes.filter(item => {
-        if (!resToAdd.includes(item)) {
-          resToAdd.push(item);
-        }
-      });
-      allRes.filter(item => {
-        if (!columnName.includes(item)) {
-          columnName.push(item);
-          testName.push(item);
-        }
-      });
-      var res = findTestRes(resToAdd[0], hash);
-      res.map(item => {
-        if (item !== undefined) {
-          arr.push(item);
-        }
-      });
-      count++;
+      map.set(hash, arr);
     }
-    map.set(hash, arr);
+  }else{
+    console.log("- "+mochawesomeDir +" was not generated.")
   }
 }
 
@@ -99,8 +104,8 @@ function findTestRes(testName, hash) {
  */
 function toCSV() {
   map.clear()
-  columnName=[]
-  testName=[]
+  columnName = []
+  testName = []
   //console.log("Writing report to .resume/report.csv")
   populateMap();
   const headers = columnName
