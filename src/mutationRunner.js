@@ -151,10 +151,10 @@ function preflight() {
         resume.regressionTesting(false);
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
-        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun, config.testUtils);
+        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       } else {
         contractsUnderMutation = defaultContractSelection(files);
-        reporter.printFilesUnderTest(contractsUnderMutation, null, null);
+        reporter.printFilesUnderTest(contractsUnderMutation, null);
       }
       const mutations = generateAllMutations(contractsUnderMutation)
       reporter.preflightSummary(mutations)
@@ -177,7 +177,7 @@ function preflightAndSave() {
         resume.regressionTesting(false);
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
-        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun, config.testUtils);
+        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       } else {
         contractsUnderMutation = defaultContractSelection(files);
         reporter.printFilesUnderTest(contractsUnderMutation, null, null);
@@ -276,7 +276,7 @@ function test() {
         changedContracts = resumeContractSelection();
         let testsToBeRun = resumeTestSelection();
         unlinkTests(testsToBeRun);
-        reporter.printFilesUnderTest(changedContracts, testsToBeRun, config.testUtils);
+        reporter.printFilesUnderTest(changedContracts, testsToBeRun);
       } else {
         changedContracts = defaultContractSelection(files);
         reporter.printFilesUnderTest(changedContracts, null, null);
@@ -380,8 +380,9 @@ function resumeTestSelection() {
     let keepTest = false;
 
     //If the test is an util it will not be deleted
-    for (const path of config.testUtils) {
+    for (const path of config.testUtils) {       
       if (originalTest.path.startsWith(path) && path !== "") {
+        console.log("I will keep: " +originalTest.path)
         keepTest = true;
         break;
       }

@@ -143,7 +143,7 @@ Reporter.prototype.preflightSummary = function (mutations) {
   }
 };
 
-Reporter.prototype.printFilesUnderTest = function (contracts, tests, testUtils) {
+Reporter.prototype.printFilesUnderTest = function (contracts, tests) {
   const nc = contracts.length;
   console.log();
   console.log("=============================================");
@@ -168,32 +168,46 @@ Reporter.prototype.printFilesUnderTest = function (contracts, tests, testUtils) 
     console.log();
   }
   else {
-    const nt = tests.length;
+
+    let testUtils = [];
+    let regTests = [];
+
+   
+      for (const t of tests) {
+        if (config.testUtils && config.testUtils !== "") {
+          if (t.startsWith(config.testUtils)) {
+            testUtils.push(t);
+          }else{
+            regTests.push(t);
+          }
+        }else{
+          regTests.push(t);
+        }        
+      }
+    
+    const nt = regTests.length;
     if (nt == 0) console.log("Tests to be run : " + chalk.green("none"));
     else {
       console.log("Tests to be run : (" + nt + "):");
 
-      tests.forEach((t) => {
+      regTests.forEach((t) => {
         console.log(
           "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
         );
       });
     }
     console.log();
-  }
 
-  if (testUtils && testUtils.length >0) {
     const nu = testUtils.length;
-      console.log("Tests utils : (" + nu + "):");
+    console.log("Tests utils : (" + nu + "):");
 
-      testUtils.forEach((t) => {
-        console.log(
-          "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
-        );
-      });
-    
+    testUtils.forEach((t) => {
+      console.log(
+        "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
+      );
+    });  
     console.log();
-  }
+  }  
 }
 
 

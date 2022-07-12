@@ -1,49 +1,52 @@
 const fs = require("fs");
 const config = require("./config");
-const baselineDir = config.sumoDir +'/baseline';
+const baselineDir = config.sumoDir + '/baseline';
 
 function Instrumenter() {
   this.testConfigFile;
 }
 
 /* Set configuration file */
-Instrumenter.prototype.setConfig = function(config) {
+Instrumenter.prototype.setConfig = function (config) {
   this.testConfigFile = config;
 };
 
 /* Start instrumentation */
-Instrumenter.prototype.instrumentConfig = function() {
-  console.log("Instrumenting configuration file:  " + config.targetDir + this.testConfigFile);
-  console.log("\n");
+Instrumenter.prototype.instrumentConfig = function () {
+  if (!this.testConfigFile.startsWith("/hardhat")) {
+    console.log("Instrumenting configuration file:  " + config.targetDir + this.testConfigFile);
+    console.log("\n");
 
-  const newConfig = require(config.targetDir + this.testConfigFile);
+    const newConfig = require(config.targetDir + this.testConfigFile);
 
-  //Instrument truffle-config
-  addMochawesome(newConfig);
+    //Instrument truffle-config
+    addMochawesome(newConfig);
 
-  if (config.tce === true) {
-    addSolcSettings(newConfig);
-  }
-
-  //Overwrite target truffle-config
-  let jsonData = JSON.stringify(newConfig);
-  let codeStr = `module.exports = ${jsonData}`;
-
-  fs.writeFileSync(config.targetDir + this.testConfigFile, codeStr, "utf8", function(err) {
-    if (err) {
-      return console.log(err);
+    if (config.tce === true) {
+      addSolcSettings(newConfig);
     }
-    console.log("Done.");
-  });
 
+    //Overwrite target truffle-config
+    let jsonData = JSON.stringify(newConfig);
+    let codeStr = `module.exports = ${jsonData}`;
+
+    fs.writeFileSync(config.targetDir + this.testConfigFile, codeStr, "utf8", function (err) {
+      if (err) {
+        return console.log(err);
+      }
+      console.log("Done.");
+    });
+  }else{
+    console.log("Instrumentation of configuration file:  " + config.targetDir + this.testConfigFile + " skipped.");
+  }
 };
 
 
 /* Restore original config file */
-Instrumenter.prototype.restoreConfig = function() {
+Instrumenter.prototype.restoreConfig = function () {
   console.log("Restoring " + config.targetDir + this.testConfigFile);
   const original = fs.readFileSync("./" + baselineDir + this.testConfigFile, "utf8");
-  fs.writeFileSync(config.targetDir + this.testConfigFile, original, "utf8");  
+  fs.writeFileSync(config.targetDir + this.testConfigFile, original, "utf8");
 };
 
 /* Add mochawesome reporter */
