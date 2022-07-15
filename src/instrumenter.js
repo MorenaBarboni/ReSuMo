@@ -20,8 +20,9 @@ Instrumenter.prototype.instrumentConfig = function () {
     const newConfig = require(config.targetDir + this.testConfigFile);
 
     //Instrument truffle-config
-    addMochawesome(newConfig);
-
+    if (config.regression === true) {
+      addMochawesome(newConfig);
+    }
     if (config.tce === true) {
       addSolcSettings(newConfig);
     }
@@ -36,7 +37,7 @@ Instrumenter.prototype.instrumentConfig = function () {
       }
       console.log("Done.");
     });
-  }else{
+  } else {
     console.log("Instrumentation of configuration file:  " + config.targetDir + this.testConfigFile + " skipped.");
   }
 };
