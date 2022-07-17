@@ -7,6 +7,8 @@ const operatorsConfigFileName = "./operators.config.json";
 const operatorsConfig = require(operatorsConfigFileName);
 var excel = require('excel4node');
 const resultsDir = config.resultsDir
+const glob = require("glob");
+
 
 function Reporter() {
   this.operators = Object.entries(operatorsConfig);
@@ -730,7 +732,6 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
 
   //Rename report file
   let pathJson = resultsDir + '/mochawesome-report/mochawesome.json';
-  let pathHtml = resultsDir + '/mochawesome-report/mochawesome.html';
 
   if (mutation.status !== 'timedout') {
 
@@ -738,14 +739,8 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
       fs.renameSync(pathJson, resultsDir + '/mochawesome-report/mochawesome-' + hash + '.json', function (err) {
         if (err) console.log('ERROR: ' + err);
       });
-
-      if (fs.existsSync(pathHtml)) {
-        fs.renameSync(pathHtml, resultsDir + '/mochawesome-report/mochawesome-' + hash + '.html', function (err) {
-          if (err) console.log('ERROR: ' + err);
-        });
-      }
-
-      //Extract test info
+     
+      //Extract current test info from the mochawesome reports
       let path = resultsDir + '/mochawesome-report/mochawesome-' + hash + '.json'
       let rawdata = fs.readFileSync(path);
       let json = JSON.parse(rawdata);
@@ -784,6 +779,32 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
       mutation.killers = killers
       mutation.nonKillers = nonKillers
 
+      //If there is a baseline, integrate old test information
+
+      if (fs.existsSync(resultsDir+"/mutationsBaseline.json")) {
+
+        let mutationsBaselinePath = resultsDir + "/mutationsBaseline.json";
+        let rawBaselineData = fs.readFileSync(mutationsBaselinePath);
+        let mutationsBaselineJson = JSON.parse(rawBaselineData);
+        let prevMutant = mutationsBaselineJson.find(element => element.hash === mutation.hash() )
+        if(prevMutant){
+
+          if(prevMutant.killers && prevMutant.killers.length > 0){
+            for(let i=0;i<prevMutant.killers.length;i++){
+              if(mutation.killers.indexOf(prevMutant.killers[i]) == -1)
+              mutation.killers.push(prevMutant.killers[i])
+            }
+            mutation.status = "killed";
+          }
+          if(prevMutant.nonKillers && prevMutant.nonKillers.length > 0){
+            for(let i=0;i<prevMutant.nonKillers.length;i++){
+              if(mutation.nonKillers.indexOf(prevMutant.nonKillers[i]) == -1)
+              mutation.nonKillers.push(prevMutant.nonKillers[i])
+            }
+          }
+        }
+       
+      }
       mutationObj = new Object()
       mutationObj.hash = mutation.hash()
       mutationObj.operator = mutation.operator
@@ -803,6 +824,40 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
     mutationObj.file = mutation.file
     mutationObj.killers = []
     mutationObj.nonKillers = []
+  }
+}
+
+
+//
+/**
+ * Updates the test results (mutations.json) by 
+ * - adding the test results for previously tested contracts that were not mutated during this run.
+ * - removing the test results for previously tested contracts that were deleted ( they are automatically ignored.)
+ * @param {*} selectedContracts the smart contracts that were tested during this run 
+ */
+Reporter.prototype.updateMochawesomeReportInfo = function (selectedContracts) {
+
+  if (fs.existsSync(resultsDir+"/mutationsBaseline.json")) {
+    console.log("baseline exists")
+    let mutationsBaselinePath = resultsDir + "/mutationsBaseline.json";
+    let rawBaselineData = fs.readFileSync(mutationsBaselinePath);
+    let mutationsBaselineJson = JSON.parse(rawBaselineData);
+  
+    glob(config.contractsDir + config.contractsGlob, (err, files) => {
+      if (err) throw err;
+      
+      files.forEach(file => {
+        if(!selectedContracts.includes(file)){      
+          const unchangedMutants = mutationsBaselineJson.filter(mutant => mutant.file === file)
+          unchangedMutants.forEach(unchangedMutant => {
+            this.mutations.push(unchangedMutant)            
+          });
+        }        
+      });  
+    })
+    console.log("> Mutation baseline integrated.");      
+  }else{
+    console.log("> Skipped: No mutation baseline to integrate.");    
   }
 }
 

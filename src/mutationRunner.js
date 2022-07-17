@@ -151,7 +151,6 @@ function preflight() {
         resume.regressionTesting(false);
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
-
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       } else {
         contractsUnderMutation = defaultContractSelection(files);
@@ -273,6 +272,7 @@ function test() {
       //Select contracts to mutate and tests to be run
       let changedContracts;
       if (config.regression) {
+        utils.saveMutationBaseline();
         resume.regressionTesting(true, true);
         changedContracts = resumeContractSelection();
         let testsToBeRun = resumeTestSelection();
@@ -310,14 +310,15 @@ function test() {
 
       instrumenter.restoreConfig();
       reporter.saveMochawesomeReportInfo();
+      reporter.updateMochawesomeReportInfo(changedContracts);
       reporter.testSummary();
       reporter.printTestReport(testTime);
       reporter.saveOperatorsResults();
       reporter.restore();
 
       if (config.regression) {
-        utils.restoreTestDir();
         csvWriter.csv();
+        utils.restoreTestDir();
       }
     })
   )

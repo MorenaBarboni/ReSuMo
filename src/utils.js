@@ -8,7 +8,7 @@ const glob = require("glob");
 const path = require("path");
 const mkdirp = require("mkdirp");
 const copy = require("recursive-copy");
-const { testsGlob } = require("./config");
+const { testsGlob, resultsDir } = require("./config");
 const sumoDir = config.sumoDir;
 const buildDir = config.buildDir;
 const resumeDir = config.resumeDir;
@@ -68,6 +68,18 @@ function saveBaseline(callback) {
     copy(contractsDir, baselineDir + '/contracts', { dot: true }, callback)))
   );}
 }
+
+/**
+ * saves the .sumo/baseline folder
+ */
+ function saveMutationBaseline() {
+  if (fs.existsSync(resultsDir+"/mutations.json")) {
+    fs.copyFile(resultsDir+"/mutations.json", resultsDir+"/mutationsBaseline.json", (err) => {
+      if (err) throw err;
+    });
+  }
+}
+
 
 //Checks the package manager used by the SUT
 function getPackageManager() {
@@ -254,6 +266,7 @@ module.exports = {
   restore: restore,
   restoreTestDir: restoreTestDir,
   cleanTmp: cleanTmp,
-  cleanBuildDir: cleanBuildDir
+  cleanBuildDir: cleanBuildDir,
+  saveMutationBaseline: saveMutationBaseline
 };
 
