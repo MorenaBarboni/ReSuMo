@@ -151,11 +151,11 @@ function preflight() {
         resume.regressionTesting(false);
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
-
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       } else {
         contractsUnderMutation = defaultContractSelection(files);
-        reporter.printFilesUnderTest(contractsUnderMutation, null);
+        testsToBeRun = defaultTestSelection();
+        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       }
       const mutations = generateAllMutations(contractsUnderMutation)
       reporter.preflightSummary(mutations)
@@ -181,7 +181,8 @@ function preflightAndSave() {
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       } else {
         contractsUnderMutation = defaultContractSelection(files);
-        reporter.printFilesUnderTest(contractsUnderMutation, null, null);
+        testsToBeRun = defaultTestSelection();
+        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       }
       const mutations = generateAllMutations(contractsUnderMutation);
       for (const mutation of mutations) {
@@ -280,7 +281,8 @@ function test() {
         reporter.printFilesUnderTest(changedContracts, testsToBeRun);
       } else {
         changedContracts = defaultContractSelection(files);
-        reporter.printFilesUnderTest(changedContracts, null, null);
+        testsToBeRun = defaultTestSelection();
+        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       }
 
       if (config.tce) {
@@ -346,6 +348,7 @@ function defaultContractSelection(files) {
 }
 
 /**
+ * Regression selection of contracts to mutate
  * @returns a list of contracts to be mutated
  */
 function resumeContractSelection() {
@@ -368,7 +371,7 @@ function resumeContractSelection() {
 }
 
 /**
- * Regression selection of contracts to mutate
+ * Regression selection of tests to evaluate
  * @returns a list of tests to be run
  */
 function resumeTestSelection() {
@@ -411,6 +414,42 @@ function resumeTestSelection() {
       if (keepTest) {
         tests.regressionTests.push(originalTest.path);
       }
+    }
+  }
+  return tests;
+}
+
+/**
+ * Default selection of tests to evaluate
+ * @returns a list of tests to be run
+ */
+ function defaultTestSelection() {
+  let tests = {
+    regressionTests: [],
+    utilsTests: [],
+  }
+
+  if (!fs.existsSync(config.testDir)) {
+    console.log("Tests directory does not exits!");
+    process.exit(0);
+  }
+
+  const originalTests = glob.sync(config.testDir + config.testsGlob);
+
+  //Select tests to be run
+  for (const originalTest of originalTests) {
+    let isUtil = false;
+
+    //If the test is an util it will not be deleted
+    for (const path of config.testUtils) {
+      if (originalTest.startsWith(path) && path !== "") {
+        tests.utilsTests.push(originalTest)
+        isUtil = true;
+        break;
+      }
+    }
+    if (!isUtil) {
+      tests.regressionTests.push(originalTest);
     }
   }
   return tests;
@@ -552,7 +591,7 @@ function runTest(mutations, file) {
       } else {
         mutation.status = "stillborn";
       }
-      if (mutation.status !== "redunant") {
+      if (mutation.status !== "redundant") {
         reporter.writeLog(mutation, null);
       }
 
