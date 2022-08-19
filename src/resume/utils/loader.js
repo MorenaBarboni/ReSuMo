@@ -104,7 +104,6 @@ function loadTests() {
             let importedElements = importDecl.importClause.namedBindings.elements.map(
               el => el.name.escapedText
             )
-            console.log(importedElements)
 
             if (importedElements.includes("getFactory")) {
               artifacts.push("GnosisSafeProxyFactory.sol");
