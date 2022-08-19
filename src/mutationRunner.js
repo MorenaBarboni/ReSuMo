@@ -272,15 +272,17 @@ function test() {
       preTest();
 
       //Select contracts to mutate and tests to be run
-      let changedContracts;
+      let contractsUnderMutation;
+      let testsToBeRun;
+
       if (config.regression) {
         resume.regressionTesting(true, true);
-        changedContracts = resumeContractSelection();
-        let testsToBeRun = resumeTestSelection();
+        contractsUnderMutation = resumeContractSelection();
+        testsToBeRun = resumeTestSelection();
         unlinkTests(testsToBeRun);
-        reporter.printFilesUnderTest(changedContracts, testsToBeRun);
+        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       } else {
-        changedContracts = defaultContractSelection(files);
+        contractsUnderMutation = defaultContractSelection(files);
         testsToBeRun = defaultTestSelection();
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       }
@@ -288,10 +290,10 @@ function test() {
       if (config.tce) {
         //save the bytecode of the original contracts
         exploreDirectories(buildDir)
-        for (const changedContract of changedContracts) {
+        for (const file of contractsUnderMutation) {
           compiledArtifacts.map(artifact => {
-            if (parse(artifact).name === parse(changedContract).name) {
-              originalBytecodeMap.set(parse(changedContract).name, saveBytecodeSync(artifact))
+            if (parse(artifact).name === parse(file).name) {
+              originalBytecodeMap.set(parse(file).name, saveBytecodeSync(artifact))
             }
           })
         }
@@ -300,12 +302,12 @@ function test() {
       //Generate the mutations
       instrumenter.instrumentConfig();
       reporter.setupMutationsReport();
-      const mutations = generateAllMutations(changedContracts);
+      const mutations = generateAllMutations(contractsUnderMutation);
 
       //Compile and test each mutant
       reporter.beginMutationTesting()
       var startTime = Date.now();
-      for (const file of changedContracts) {
+      for (const file of contractsUnderMutation) {
         runTest(mutations, file);
       }
       var testTime = ((Date.now() - startTime) / 60000).toFixed(2);
