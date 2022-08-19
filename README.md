@@ -71,18 +71,22 @@ To this end, ReSuMo automatically adds the necessary fields to your Truffle conf
 
 ##### 4) Regression Mutation Testing
 
-ReSuMo relies on the [mochawesome](https://github.com/adamgruber/mochawesome) reporter to save test reports and enable regression mutation testing. To use mochawesome, ReSuMo automatically adds the necessary fields to your Truffle configuration file.
-If you are using a different testing framework (e.g, Hardhat) you must manually add the following options to the configuration file: 
+ReSuMo relies on the [mochawesome](https://github.com/adamgruber/mochawesome) reporter to save test reports and enable regression mutation testing. To use mochawesome, ReSuMo automatically adds the necessary fields to the Truffle configuration file of the SUT. If you are using a different testing framework (e.g, Hardhat) you must manually add the following options to the configuration file: 
 
 ```
 mocha = {
       reporter: "mochawesome",
       reporterOptions: {
-            reportDir: absoluteResultsDir + "/mochawesome-report",
+            reportDir: path of your absoluteResultsDir + "/mochawesome-report",
             html: false
       }
 }
 ```
+
+ReSuMo currently supports static dependency collection for:
+* JavaScript tests (.js)
+* Solidity tests (.sol)
+
 
 ## CLI Usage
 
