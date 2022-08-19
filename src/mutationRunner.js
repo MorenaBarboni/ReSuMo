@@ -280,10 +280,18 @@ function test() {
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
         unlinkTests(testsToBeRun);
+        if (testsToBeRun.regressionTests.length === 0) {
+          console.log("No test must be run!");
+          process.exit(0);
+        }
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       } else {
         contractsUnderMutation = defaultContractSelection(files);
         testsToBeRun = defaultTestSelection();
+        if (testsToBeRun.regressionTests.length === 0) {
+          console.log("No test must be run!");
+          process.exit(0);
+        }
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       }
 
