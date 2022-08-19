@@ -19,6 +19,6 @@ module.exports ={
  testingTimeOutInSec: 300,
  contractsGlob: '/**/*.sol',
  packageManagerGlob: ['/package-lock.json', '/yarn.lock'],
- testConfigGlob: ['/truffle-config.js','/truffle.js'],
+ testConfigGlob: ['/truffle-config.js','/truffle.js', '/hardhat.config.ts'],
  testsGlob: '/**/*.{js,sol,ts}',
 }
