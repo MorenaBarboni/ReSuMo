@@ -282,6 +282,17 @@ function test() {
       } else {
         changedContracts = defaultContractSelection(files);
         testsToBeRun = defaultTestSelection();
+        let contractsUnderMutation;
+        if (config.regression) {
+            resume.regressionTesting(false);
+            contractsUnderMutation = resumeContractSelection();
+            testsToBeRun = resumeTestSelection();
+            reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
+          } else {
+            contractsUnderMutation = defaultContractSelection(files);
+            testsToBeRun = defaultTestSelection();
+            reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
+        }
         reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
       }
 
