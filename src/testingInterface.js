@@ -39,33 +39,22 @@ function spawnCompile(packageManager, runScript) {
  * Spawns a new test process through the interface provided by the connected testing framework 
  * @param packageManager The package manager used within the SUT
  * @param runScript the run script command of the packageManager
+ * @param testFiles the test files to be run
  */
-  function spawnTest(packageManager, runScript) {
+  function spawnTest(packageManager, runScript, testFiles) {
   
     var testChild;
     //Run a custom test script
     if (config.customTestScript) {
       if (process.platform === "win32") {
-        testChild = spawnSync(packageManager + ".cmd", [runScript, "test"], {
+        testChild = spawnSync(packageManager + ".cmd", [runScript, "test", ...testFiles], {
           stdio: "inherit",
           cwd: targetDir,
           timeout: 300000
         });
   
-      } else if (process.platform === "linux") {
-        testChild = spawnSync(packageManager, [runScript, "test"], {
-          stdio: "inherit",
-          cwd: targetDir,
-          timeout: 300000
-        });
-      } else if (process.platform === "darwin") {
-        testChild = spawnSync(packageManager, [runScript, "test"], {
-          stdio: "inherit",
-          cwd: targetDir,
-          timeout: 300000
-        });
-      } else if (process.platform === "darwin") {
-        testChild = spawnSync(packageManager, [runScript, "test"], {
+      } else if (process.platform === "linux" || process.platform === "darwin") {
+        testChild = spawnSync(packageManager, [runScript, "test", ...testFiles], {
           stdio: "inherit",
           cwd: targetDir,
           timeout: 300000
@@ -82,9 +71,9 @@ function spawnCompile(packageManager, runScript) {
         }
       }else{
         if (process.platform === "win32") {
-          testChild = spawnSync("truffle.cmd", ["test"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
+          testChild = spawnSync("truffle.cmd", ["test", ...testFiles], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
         } else if (process.platform === "linux" || process.platform === "darwin") {
-          testChild = spawnSync("truffle", ["test"], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
+          testChild = spawnSync("truffle", ["test", ...testFiles], { stdio: "inherit", cwd: targetDir, timeout: (testingTimeOutInSec*1000) });
         }
       }     
     }

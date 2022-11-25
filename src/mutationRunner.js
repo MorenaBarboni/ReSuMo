@@ -19,9 +19,10 @@ const resume = require("./resume/resume");
 const csvWriter = require("./resume/utils/csvWriter");
 
 //SuMo configuration
-const absoluteResultsDir = config.absoluteResultsDir;
+const absoluteArtifactsDir = config.absoluteArtifactsDir;
 const resultsDir = config.resultsDir
-const baselineDir = config.sumoDir + '/baseline';
+const artifactsDir = config.artifactsDir
+const baselineDir = config.baselineDir;
 const targetDir = config.targetDir;
 const contractsDir = config.contractsDir;
 const buildDir = config.buildDir;
@@ -96,7 +97,7 @@ const mutGen = new mutationGenerator.CompositeOperator([
  */
 function prepare(callback) {
 
-  if (absoluteResultsDir === "" || targetDir === "" || contractsDir === "" || testDir === "" || (config.tce && buildDir === '')) {
+  if (absoluteArtifactsDir === "" || targetDir === "" || contractsDir === "" || testDir === "" || (config.tce && buildDir === '')) {
     console.error("SuMo configuration is incomplete or missing.");
     process.exit(1);
   }
@@ -109,14 +110,16 @@ function prepare(callback) {
   let testConfigFile = utils.getTestConfig();
   instrumenter.setConfig(testConfigFile);
 
-  mkdirp(mutantsDir);
-  mkdirp(liveDir);
-  mkdirp(killedDir);
-  mkdirp(timedoutDir);
-  mkdirp(stillbornDir);
+  mkdirp.sync(resultsDir);
+  mkdirp.sync(artifactsDir);
+  mkdirp.sync(mutantsDir);
+  mkdirp.sync(liveDir);
+  mkdirp.sync(killedDir);
+  mkdirp.sync(timedoutDir);
+  mkdirp.sync(stillbornDir);
   if (config.tce) {
-    mkdirp(redundantDir);
-    mkdirp(equivalentDir);
+    mkdirp.sync(redundantDir);
+    mkdirp.sync(equivalentDir);
   }
 
   if (fs.existsSync(baselineDir)) {
@@ -147,19 +150,18 @@ function preflight() {
       if (err) throw err;
 
       let contractsUnderMutation;
+
       if (config.regression) {
         resume.regressionTesting(false);
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
-        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
+        reporter.logSelectedFiles(contractsUnderMutation, testsToBeRun);
       } else {
         contractsUnderMutation = defaultContractSelection(files);
         testsToBeRun = defaultTestSelection();
-        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
+        reporter.logSelectedFiles(contractsUnderMutation, testsToBeRun);
       }
-      const mutations = generateAllMutations(contractsUnderMutation)
-      reporter.preflightSummary(mutations)
-      //reporter.preflightToExcel(mutations)
+      generateAllMutations(contractsUnderMutation, true)
     })
   );
 }
@@ -167,9 +169,9 @@ function preflight() {
 
 /**
  * Shows a summary of the available mutants without starting the testing process and
- * saves the mutants to file.
+ * saves the generated .sol mutants to file.
  */
-function preflightAndSave() {
+function mutate() {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
@@ -178,17 +180,16 @@ function preflightAndSave() {
         resume.regressionTesting(false);
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
-        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
+        reporter.logSelectedFiles(contractsUnderMutation, testsToBeRun);
       } else {
         contractsUnderMutation = defaultContractSelection(files);
         testsToBeRun = defaultTestSelection();
-        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
+        reporter.logSelectedFiles(contractsUnderMutation, testsToBeRun);
       }
-      const mutations = generateAllMutations(contractsUnderMutation);
+      const mutations = generateAllMutations(contractsUnderMutation, true);
       for (const mutation of mutations) {
         mutation.save();
       }
-      reporter.preflightSummary(mutations);
       console.log("Mutants saved to file");
     })
   );
@@ -196,50 +197,69 @@ function preflightAndSave() {
 
 /**
  * Generates  the mutations for each target contract
- *  @param files The smart contracts under test
+ *  @param files The smart contracts to be mutated
+ *  @param overwrite Overwrite the generated mutation reports
  */
-function generateAllMutations(files) {
-  reporter.setupReport();
+function generateAllMutations(files, overwrite) {
   let mutations = [];
   var startTime = Date.now();
   let contractsUnderTest = files;
   for (const file of contractsUnderTest) {
     const source = fs.readFileSync(file, "utf8");
-    const ast = parser.parse(source, { range: true });
+    const ast = parser.parse(source, { range: true, loc: true })
     const visit = parser.visit.bind(parser, ast);
-    mutations = mutations.concat(mutGen.getMutations(file, source, visit));
+    mutations = mutations.concat(mutGen.getMutations(file, source, visit, overwrite));
   }
-  var generationTime = (Date.now() - startTime) / 1000;
-  reporter.saveGenerationTime(mutations.length, generationTime);
+  if (overwrite) {
+    var generationTime = (Date.now() - startTime) / 1000
+    reporter.saveGeneratedMutantsCsv(mutations);
+    reporter.logPreflightSummary(mutations, generationTime, mutGen.getEnabledOperators())
+  }
   return mutations;
 }
 
 /**
  * Runs the original test suite to ensure that all tests pass.
+ * Cleans up files from the previous run.
  */
 function preTest() {
 
-  reporter.beginPretest();
+  reporter.logPretest();
 
   //Check if there are contracts under mutation
   let contractsUnderMutation;
+  let testsToBeRun;
+
   if (config.regression) {
-    resume.regressionTesting(false, false);
+    resume.regressionTesting(false);
     contractsUnderMutation = resumeContractSelection();
-    if (contractsUnderMutation.length == 0) {
-      console.log("Nothing to test.")
-      process.exit(1)
-    }
+    testsToBeRun = resumeTestSelection();
+  } else {
+    contractsUnderMutation = defaultContractSelection();
+    testsToBeRun = defaultTestSelection();
   }
 
-  reporter.setupLog();
+  if (contractsUnderMutation.length == 0) {
+    console.log(chalk.red("- No mutants to test"))
+    process.exit(1)
+  }
+
+  //run pretest on all test files regardless of regression
+  if (testsToBeRun.testFiles.length == 0) {
+    console.log(chalk.red("- No tests to be evaluated"))
+    process.exit(1)
+  }
+
   utils.cleanBuildDir(); //Remove old compiled artifacts
+  utils.cleanMochaDir(); //Remove old mochawesome reports
+  utils.cleanSavedMutations(); //Remove old saved mutations
+  reporter.setupResultsCsv();
 
   let ganacheChild = testingInterface.spawnGanache();
   const isCompiled = testingInterface.spawnCompile(packageManager, runScript);
 
   if (isCompiled) {
-    const status = testingInterface.spawnTest(packageManager, runScript);
+    const status = testingInterface.spawnTest(packageManager, runScript, testsToBeRun.testFiles);
     if (status === 0) {
       console.log("Pre-test OK.");
     } else {
@@ -263,11 +283,6 @@ function test() {
     glob(contractsDir + contractsGlob, (err, files) => {
       if (err) throw err;
 
-      if (!files.length) {
-        console.error("Contract directory is empty")
-        process.exit()
-      }
-
       //Run the pre-test
       preTest();
 
@@ -276,61 +291,59 @@ function test() {
       let testsToBeRun;
 
       if (config.regression) {
-        resume.regressionTesting(true, true);
+        utils.saveMutationBaseline();
+        resume.regressionTesting(true);
         contractsUnderMutation = resumeContractSelection();
         testsToBeRun = resumeTestSelection();
-        unlinkTests(testsToBeRun);
-        if (testsToBeRun.regressionTests.length === 0) {
-          console.log("No test must be run!");
-          process.exit(0);
-        }
-        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
+        reporter.logSelectedFiles(contractsUnderMutation, testsToBeRun);
+        contractsUnderMutation.forEach(c => {
+          let testsForC = resumeTestSelectionForContract(c);
+          if (testsForC.length != 0) {
+            reporter.logTestsForContract(c, testsForC)
+          }
+        });
+
       } else {
         contractsUnderMutation = defaultContractSelection(files);
         testsToBeRun = defaultTestSelection();
-        if (testsToBeRun.regressionTests.length === 0) {
-          console.log("No test must be run!");
-          process.exit(0);
-        }
-        reporter.printFilesUnderTest(contractsUnderMutation, testsToBeRun);
+        reporter.logSelectedFiles(contractsUnderMutation, testsToBeRun);
       }
-
       if (config.tce) {
         //save the bytecode of the original contracts
         exploreDirectories(buildDir)
-        for (const file of contractsUnderMutation) {
+        for (const contract of contractsUnderMutation) {
           compiledArtifacts.map(artifact => {
-            if (parse(artifact).name === parse(file).name) {
-              originalBytecodeMap.set(parse(file).name, saveBytecodeSync(artifact))
+            if (parse(artifact).name === parse(contract).name) {
+              originalBytecodeMap.set(parse(contract).name, saveBytecodeSync(artifact))
             }
           })
         }
       }
-
       //Generate the mutations
       instrumenter.instrumentConfig();
       reporter.setupMutationsReport();
-      const mutations = generateAllMutations(contractsUnderMutation);
+      const mutations = generateAllMutations(contractsUnderMutation, true);
 
       //Compile and test each mutant
-      reporter.beginMutationTesting()
+      reporter.logStartMutationTesting()
       var startTime = Date.now();
       for (const file of contractsUnderMutation) {
-        runTest(mutations, file);
+        runTest(mutations, file, testsToBeRun.testFiles);
       }
       var testTime = ((Date.now() - startTime) / 60000).toFixed(2);
 
+      //Restore the test configuration file
       instrumenter.restoreConfig();
-      reporter.saveMochawesomeReportInfo();
-      reporter.testSummary();
-      reporter.printTestReport(testTime);
-      reporter.saveOperatorsResults();
-      reporter.restore();
 
-      if (config.regression) {
-        utils.restoreTestDir();
-        csvWriter.csv();
-      }
+      //Integrate the test results
+      reporter.integrateUnchangedMutants(contractsUnderMutation, () => {
+        reporter.saveMutationsJSON();
+        reporter.saveOperatorsResults();
+        if (config.regression) {
+          csvWriter.csv();
+        }
+        reporter.logAndSaveTestSummary(testTime)
+      })
     })
   )
 }
@@ -358,7 +371,7 @@ function defaultContractSelection(files) {
 }
 
 /**
- * Regression selection of contracts to mutate
+ * Regression selection of contracts to mutate * 
  * @returns a list of contracts to be mutated
  */
 function resumeContractSelection() {
@@ -386,8 +399,8 @@ function resumeContractSelection() {
  */
 function resumeTestSelection() {
   let tests = {
-    regressionTests: [],
-    utilsTests: [],
+    testFiles: [],
+    testUtils: [],
   }
 
   let changedTests = resume.getChangedTest();
@@ -400,7 +413,7 @@ function resumeTestSelection() {
     //If the test is an util it will not be deleted
     for (const path of config.testUtils) {
       if (originalTest.path.startsWith(path) && path !== "") {
-        tests.utilsTests.push(originalTest.path)
+        tests.testUtils.push(originalTest.path)
         keepTest = true;
         break;
       }
@@ -422,7 +435,7 @@ function resumeTestSelection() {
         }
       }
       if (keepTest) {
-        tests.regressionTests.push(originalTest.path);
+        tests.testFiles.push(originalTest.path);
       }
     }
   }
@@ -430,13 +443,43 @@ function resumeTestSelection() {
 }
 
 /**
+ * Get the regression tests to be run on a specific smart contract
+ * @param contract the smart contract to be tested
+ * @returns a list of tests
+ */
+function resumeTestSelectionForContract(contract) {
+
+  let tests = {
+    testFiles: [],
+    testUtils: [],
+  }
+
+  const resumeSelectedTests = resumeTestSelection();
+  const testsCoveringContract = resume.getTestsCoveringContract(contract);
+
+  if (testsCoveringContract.length != 0) {
+    tests.testUtils = resumeSelectedTests.testUtils;
+
+    testsCoveringContract[0].forEach(t => {
+      if (resumeSelectedTests.testFiles.includes(t)) {
+        tests.testFiles.push(t)
+      }
+    });
+  }
+
+  return tests;
+}
+
+
+
+/**
  * Default selection of tests to evaluate
  * @returns a list of tests to be run
  */
- function defaultTestSelection() {
+function defaultTestSelection() {
   let tests = {
-    regressionTests: [],
-    utilsTests: [],
+    testFiles: [],
+    testUtils: [],
   }
 
   if (!fs.existsSync(config.testDir)) {
@@ -453,33 +496,24 @@ function resumeTestSelection() {
     //If the test is an util it will not be deleted
     for (const path of config.testUtils) {
       if (originalTest.startsWith(path) && path !== "") {
-        tests.utilsTests.push(originalTest)
+        tests.testUtils.push(originalTest)
         isUtil = true;
         break;
       }
     }
     if (!isUtil) {
-      tests.regressionTests.push(originalTest);
+      tests.testFiles.push(originalTest);
     }
   }
   return tests;
 }
 
-/**
- * Unliks tests that must not be run
- * @param tests regression tests and util tests to be kept
- * 
- */
-function unlinkTests(tests) {
-  let regressionTests = tests.regressionTests.concat(tests.utilsTests);
-  let originalTests = resume.getOriginalTest();
-  for (const originalTest of originalTests) {
-    if (!regressionTests.includes(originalTest.path)) {
-      fs.unlinkSync(originalTest.path);
-    }
-  }
-}
 
+/**
+ * Get a mutation by its hash
+ * @param {*} mutations 
+ * @returns 
+ */
 function mutationsByHash(mutations) {
   return mutations.reduce((obj, mutation) => {
     obj[mutation.hash()] = mutation;
@@ -487,10 +521,15 @@ function mutationsByHash(mutations) {
   }, {});
 }
 
+/**
+ * Prints the diff between a mutant and the original contract
+ * @param {*} argv the hash of the mutant
+ */
+
 function diff(argv) {
   prepare(() =>
     glob(contractsDir + contractsGlob, (err, files) => {
-      const mutations = generateAllMutations(files);
+      const mutations = generateAllMutations(files, false);
       const index = mutationsByHash(mutations);
       if (!index[argv.hash]) {
         console.error("Mutation " + argv.hash + " not found.");
@@ -512,39 +551,38 @@ function enableOperator(ID) {
   if (!ID) {
     var success = mutGen.enableAll();
     if (success)
-      console.log("All mutation operators enabled.");
+      console.log("> All mutation operators enabled.");
     else
       console.log("Error");
   } else {
     //Enable operator ID
     var success = mutGen.enable(ID);
     if (success)
-      console.log(ID + " enabled.");
+      console.log("> " + chalk.bold.yellow(ID) + " enabled.");
     else
-      console.log(ID + " does not exist.");
+      console.log("> " + ID + " does not exist.");
   }
 }
 
-//Disables a mutation operator
+
+//Disables a mutation operator 
 function disableOperator(ID) {
   //Disable all operators
   if (!ID) {
     var success = mutGen.disableAll();
     if (success)
-      console.log("All mutation operators disabled.");
+      console.log("> All mutation operators disabled.");
     else
       console.log("Error");
   } else {
     //Disable operator ID
     var success = mutGen.disable(ID);
     if (success)
-      console.log(ID + " disabled.");
+      console.log("> " + chalk.bold.yellow(ID) + " disabled.");
     else
-      console.log(ID + " does not exist.");
+      console.log("> " + ID + " does not exist.");
   }
 }
-
-
 
 /**
  *The <b>saveBytecodeSync</b> function return the original bytecode of a certain contract
@@ -566,43 +604,52 @@ function saveBytecodeSync(file) {
 /**
  * The <b>runTest</b> function compile and test each mutant, assigning them a certain status
  * @param mutations An array of all mutants
- * @param originalBytecodeMap A map containing all original contracts bytecodes
  * @param file The name of the original contract
+ * @param tests the tests to be run on the mutated contract
  */
-function runTest(mutations, file) {
+function runTest(mutations, file, tests) {
   const mutantBytecodeMap = new Map();
 
-  for (const mutation of mutations) {
+  for (var mutation of mutations) {
     if ((parse(mutation.file).name) === (parse(file).name)) {
+
       let ganacheChild = testingInterface.spawnGanache();
+
       mutation.apply();
-      reporter.beginCompile(mutation);
+      reporter.logCompile(mutation);
       const isCompiled = testingInterface.spawnCompile(packageManager, runScript);
+
       if (isCompiled) {
         if (config.tce) {
           tce(mutation, mutantBytecodeMap, originalBytecodeMap);
         }
         if (mutation.status !== "redundant" && mutation.status !== "equivalent") {
-          reporter.beginTest(mutation);
+          reporter.logTest(mutation);
           let startTestTime = Date.now();
-          const result = testingInterface.spawnTest(packageManager, runScript);
-          mutation.testingTime = Date.now() - startTestTime;
-          if (result === 0) {
+
+          //If there are no tests to be run on the mutant
+          if (tests.length === 0) {
             mutation.status = "live";
-          } else if (result === 999) {
-            mutation.status = "timedout";
           } else {
-            mutation.status = "killed";
+            const result = testingInterface.spawnTest(packageManager, runScript, tests);
+            mutation.testingTime = Date.now() - startTestTime;
+            if (result === 0) {
+              mutation.status = "live";
+            } else if (result === 999) {
+              mutation.status = "timedout";
+            } else {
+              mutation.status = "killed";
+            }
           }
         }
         if (mutation.status !== "redundant" && mutation.status !== "equivalent" && mutation.status !== "timedout") {
-          reporter.extractMochawesomeReportInfo(mutation);
+          mutation = reporter.getTestResults(mutation);
         }
       } else {
         mutation.status = "stillborn";
       }
       if (mutation.status !== "redundant") {
-        reporter.writeLog(mutation, null);
+        reporter.saveResultsCsv(mutation, null);
       }
 
       reporter.mutantStatus(mutation);
@@ -642,7 +689,7 @@ function tce(mutation, map, originalBytecodeMap) {
     for (const key of map.keys()) {
       if (map.get(key) === mutation.bytecode) {
         mutation.status = "redundant";
-        reporter.writeLog(mutation, key);
+        reporter.saveResultsCsv(mutation, key);
         break;
       }
     }
@@ -669,14 +716,14 @@ function exploreDirectories(Directory) {
  Saves the test results extracted from the  mocha-report dir to an excel file
  */
 function generateTestExcel() {
-  if (fs.existsSync(resultsDir + '/mochawesome-report'))
+  if (fs.existsSync(artifactsDir + '/mochawesome-report'))
     reporter.saveTestData();
   else
     console.log('The mochawesome-report dir does not exist!')
 }
 
 module.exports = {
-  test: test, preflight, preflight, mutate: preflightAndSave, diff: diff, list: list,
+  test: test, preflight, preflight, mutate: mutate, diff: diff, list: list,
   enable: enableOperator, disable: disableOperator, preTest: preTest, generateExcel: generateTestExcel
 };
 

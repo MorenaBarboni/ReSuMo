@@ -3,25 +3,31 @@ const jsdiff = require("diff");
 const fs = require("fs");
 const sha1 = require("sha1");
 const path = require("path");
-const { mutantsDir, saveMutants } = require("./config");
 const config = require("./config");
 
-const baselineDir = config.sumoDir +'/baseline';
+const baselineDir = config.baselineDir;
 const contractsDir = config.contractsDir;
+const mutantsDir = config.resultsDir+'/mutants';
 
 function splice(str, start, length, replacement) {
   return str.substring(0, start) + replacement + str.substring(start + length);
 }
 
-function Mutation(file, start, end, replace, operator, status = null, killers = [], nonKillers = [], bytecode, testingTime=null) {
+function Mutation(file, start, end, startLine, endLine, original, replace, operator, status = null, killers = [], nonKillers = [], bytecode, testingTime=null, id = null) {
   this.file = file;
   this.start = start;
   this.end = end;
+  this.startLine = startLine;
+  this.endLine = endLine;
+  this.original = original;
   this.replace = replace;
   this.operator = operator;
   this.status = status;
+  this.killers = killers,
+  this.nonKillers = nonKillers,
   this.bytecode = bytecode;
-  this.testingTime = testingTime
+  this.testingTime = testingTime;
+  this.id = this.hash();
 }
 
 Mutation.prototype.hash = function() {
@@ -43,10 +49,6 @@ Mutation.prototype.save = function() {
   const mutated = this.applyToString(original);
 
   var contractName = path.basename(this.file);
-  contractName = contractName.replace(".sol", "");
-
-  // var mutantName =  path.basename(this.file) + ":" +this.hash()
-  //console.log('\nSaving mutant ' + chalk['yellow'](mutantName))
 
   fs.writeFileSync(mutantsDir + "/" + contractName + "-" + this.hash() + ".sol", mutated, function(err) {
     if (err) return console.log(err);
@@ -144,6 +146,28 @@ Mutation.prototype.printMutation = function() {
 
   return lines.join("\n") + "\n";
 };
+
+/**
+ * Converts the mutation to json
+ * @returns the json representation of a mutation
+ */
+ Mutation.prototype.toJson = function () {
+  var m = new Mutation(this.file, this.start, this.end, this.startLine, this.endLine, this.original, this.replace, this.operator,  this.status, this.killers, this.nonKillers, this.bytecode, this.testingTime);
+  m.bytecode = null;
+  return JSON.stringify(m, null, "\t");
+}
+
+/**
+ * Gets the mutation file name
+ * @returns the name of the mutated contract
+ */
+ Mutation.prototype.fileName = function () {
+
+  const lastIndex = this.file.lastIndexOf('/');
+  let fileName = this.file.slice(lastIndex+1);
+  
+  return fileName;
+}
 
 
 Mutation.prototype.getLineNumber = function() {

@@ -6,11 +6,9 @@ const sol_parser = require("@solidity-parser/parser");
 const acorn = require('acorn');
 const ts = require('typescript');
 const config = require("../../config");
-const { factory } = require("typescript");
+
 
 function loadTests() {
-//  fileSys.copyTestsToBaseline();
-
   if (!fs.existsSync(fileSys.loadTestsDir)) {
     console.log("Tests directory does not exits!");
     process.exit(0);
@@ -219,62 +217,8 @@ function loadContracts() {
   return contracts;
 }
 
-function loadMutationOperators() {
-  fileSys.copyMutationOpertatorsToBaseline();
-
-  const ops = require(fileSys.loadMutationOperatorsFile);
-
-  return ops;
-}
-
-function loadMatrixJsonFromFile(matrix) {
-  var lines = matrix.toString().split(/(?:\r\n|\r|\n)/g);
-
-  var mutantLines = [];
-  lines.forEach((line) => {
-    if (line.length > 0) {
-      const contract_mutant_killers_saviors = line.split(":", 4);
-      const contract = contract_mutant_killers_saviors[0];
-      const mutant = contract_mutant_killers_saviors[1];
-      const killers = contract_mutant_killers_saviors[2];
-      const saviors = contract_mutant_killers_saviors[3];
-      var killers_array = killers.split(",");
-      if (killers_array[0] == "") killers_array = [];
-      var saviors_array = saviors.split(",");
-      if (saviors_array[0] == "") saviors_array = [];
-      const mutantLine = {
-        contract: contract,
-        mutant: mutant,
-        killers: killers_array,
-        saviors: saviors_array,
-      };
-
-      mutantLines.push(mutantLine);
-    }
-  });
-
-  return mutantLines;
-}
-
-function loadPreviousMatrixJson() {
-  return loadMatrixJsonFromFile(fileSys.loadPreviousMatrixFile());
-}
-
-function loadCurrentMatrixJson() {
-  return loadMatrixJsonFromFile(fileSys.loadCurrentMatrixFile());
-}
-
-function loadFinalMatrix() {
-  return loadMatrixJsonFromFile(
-    fs.readFileSync(require("../../config").finalMatrixPath)
-  );
-}
 
 module.exports = {
   loadTests: loadTests,
   loadContracts: loadContracts,
-  loadMutationOperators: loadMutationOperators,
-  loadPreviousMatrixJson: loadPreviousMatrixJson,
-  loadCurrentMatrixJson: loadCurrentMatrixJson,
-  loadFinalMatrix: loadFinalMatrix,
 };

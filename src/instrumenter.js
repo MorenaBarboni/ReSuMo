@@ -1,6 +1,6 @@
 const fs = require("fs");
 const config = require("./config");
-const baselineDir = config.sumoDir + '/baseline';
+const baselineDir = config.baselineDir;
 
 function Instrumenter() {
   this.testConfigFile;
@@ -57,7 +57,7 @@ function addMochawesome(testConfigFile) {
 
     testConfigFile.mocha.reporter = "mochawesome";
     testConfigFile.mocha.reporterOptions = {
-      reportDir: config.absoluteResultsDir + "/mochawesome-report",
+      reportDir: config.absoluteArtifactsDir + "/mochawesome-report",
       html: false,
       quiet: true
     };
@@ -66,7 +66,7 @@ function addMochawesome(testConfigFile) {
     testConfigFile.mocha = {
       reporter: "mochawesome",
       reporterOptions: {
-        reportDir: config.absoluteResultsDir + "/mochawesome-report",
+        reportDir: config.absoluteArtifactsDir + "/mochawesome-report",
         html: false,
         quiet: false
       }

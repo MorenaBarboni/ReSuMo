@@ -1,5 +1,3 @@
-const fs = require("fs");
-const path = require("path");
 const checksum = require("checksum");
 const fileSys = require("./utils/fileSys");
 
@@ -81,9 +79,6 @@ function checkTests(tests, overwrite) {
     if (element.checksum !== element.lastChecksum)
       changedFiles_paths.push(element.filePath);
   });
-  //if (changedFiles_paths.length == 0) changedFiles_paths.push("none");
-
-  //fileSys.writeFile(fileSys.types.tests_changed, changedFiles_paths);
 
   return changedFiles_paths;
 }

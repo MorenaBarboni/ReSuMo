@@ -1,9 +1,10 @@
 {
   "name": "ReSuMo",
-  "version": "0.0.2",
+  "version": "2.0.0",
   "description": "ReSuMo (REgression SOlidity MUtator) is a regression mutation testing tool for Solidity smart contracts",
   "main": "index.js",
   "license": "MIT",
+  "author": "Morena Barboni",
   "scripts": {
     "sumo": "node index.js",
     "prettier": "prettier --single-quote --no-semi --write **/*.js",

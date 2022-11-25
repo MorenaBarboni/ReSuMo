@@ -7,10 +7,13 @@ const operatorsConfigFileName = "./operators.config.json";
 const operatorsConfig = require(operatorsConfigFileName);
 var excel = require('excel4node');
 const resultsDir = config.resultsDir
+const artifactsDir = config.artifactsDir
+const glob = require("glob");
+const Mutation = require('./mutation');
+
 
 function Reporter() {
   this.operators = Object.entries(operatorsConfig);
-  this.mutations = [];
   this.survived = [];
   this.killed = [];
   this.stillborn = [];
@@ -23,81 +26,167 @@ Reporter.prototype.chalkMutant = function (mutant) {
   return chalk.rgb(186, 85, 211)(mutant.hash());
 };
 
-Reporter.prototype.beginPretest = function () {
-  console.log("=============================================");
-  console.log(chalk.yellow.bold("> Running pre-test"));
-  console.log("=============================================");
-
+Reporter.prototype.logPretest = function () {
+  console.log(chalk.yellow.bold("> Running pre-test 🔎"));
 };
 
-Reporter.prototype.beginBytecode = function () {
-  console.log("=============================================");
-  console.log(chalk.yellow.bold("      Preparing Mutation Testing"));
-  console.log("=============================================");
-
+Reporter.prototype.logStartMutationTesting = function () {
+  console.log(chalk.yellow.bold("> Starting Mutation Testing 👾"))
 };
 
-Reporter.prototype.beginMutationTesting = function () {
-  console.log("=============================================");
-  console.log(chalk.yellow.bold(" >  👾 Starting Mutation Testing 👾"))
-  console.log("=============================================");
-};
+Reporter.prototype.logTest = function (mutant) {
 
+  console.log("- Mutant successfully compiled. \n");
 
-Reporter.prototype.beginTest = function (mutant) {
-
-  console.log("Mutant successfully compiled.");
-
-  console.log("Applying mutation " + this.chalkMutant(mutant) + " to " + mutant.file);
+  console.log(chalk.yellow("> Applying mutation ") + this.chalkMutant(mutant) + " to " + mutant.fileName());
   process.stdout.write(mutant.diff());
   console.log("\n ");
-  console.log(chalk.yellow("Running tests ") + "for mutation " + this.chalkMutant(mutant));
+  console.log(chalk.yellow("> Running tests ") + "for mutant " + this.chalkMutant(mutant));
 };
 
-Reporter.prototype.beginCompile = function (mutant) {
-  const hash = mutant.hash();
+Reporter.prototype.logCompile = function (mutant) {
   console.log("\n ");
-  console.log("\n " + chalk.yellow("Compiling mutation ") + this.chalkMutant(mutant) + " of " + mutant.file);
+  console.log(chalk.yellow("> Compiling mutation ") + this.chalkMutant(mutant) + " of " + mutant.fileName());
 };
 
-//Setup sync log
-Reporter.prototype.setupLog = function () {
-  fs.writeFileSync(resultsDir + "/log.txt", "################################################ LOG ################################################", function (err) {
+Reporter.prototype.logPreflightSummary = function (mutations, genTime, operators) {
+
+  console.log(chalk.yellow.bold("> Preflight") + " ✈️ \n");
+
+  const preflight = "- " + operators + "\n\n- " + mutations.length + " mutation(s) found in " + genTime + " seconds \n" +
+    "- Generated mutations saved to .sumo/results/generated.csv \n";
+
+  fs.appendFileSync(resultsDir + "/report.txt", "\n\n>>> PREFLIGHT SUMMARY \n\n" + preflight, function (err) {
     if (err) return console.log(err);
-  })
-  fs.writeFileSync(resultsDir + "/log.txt", "hash; file; operator; start; end; status; isRedundantTo; testingTime; \n", function (err) {
+  });
+
+  console.log(preflight);
+};
+
+
+/**
+ * Prints the files under test and saves them to report.txt
+ * @param {*} contracts list of contracts to be mutated
+ * @param {*} tests list of tests to be run
+ */
+Reporter.prototype.logSelectedFiles = function (contracts, tests) {
+  const nc = contracts.length;
+  console.log(chalk.yellow.bold("> Selecting Contract and Test Files \n"))
+
+
+  if (nc == 0) console.log("Contracts to be mutated : " + chalk.green("none"));
+  else {
+    console.log("Contracts to be mutated : (" + nc + "):");
+    fs.writeFileSync(resultsDir + "/report.txt", ">>> SELECTED FILES \n\n Contracts to be mutated : (" + nc + "):\n", function (err) {
+      if (err) return console.log(err);
+    });
+
+    contracts.forEach((c) => {
+      console.log(
+        "\t" + path.parse(c).dir + "/" + chalk.bold(path.basename(c))
+      );
+      fs.appendFileSync(resultsDir + "/report.txt", "\t" + "- " + path.parse(c).dir + "/" + path.basename(c) + "\n", function (err) {
+        if (err) return console.log(err);
+      });
+    });
+  }
+  console.log();
+
+  const nt = tests.testFiles.length;
+  if (nt == 0) console.log("Tests to be run : " + chalk.green("none"));
+  else {
+    console.log("Tests to be run : (" + nt + "):");
+    fs.appendFileSync(resultsDir + "/report.txt", "Tests to be run : (" + nt + "):\n", function (err) {
+      if (err) return console.log(err);
+    });
+
+    tests.testFiles.forEach((t) => {
+      console.log(
+        "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
+      );
+      fs.appendFileSync(resultsDir + "/report.txt", "\t" + "- " + path.parse(t).dir + "/" + path.basename(t) + '\n', function (err) {
+        if (err) return console.log(err);
+      });
+    });
+  }
+  console.log();
+
+  const nu = tests.testUtils.length;
+  console.log("Tests utils : (" + nu + "):");
+  fs.appendFileSync(resultsDir + "/report.txt", "Tests utils : (" + nu + "):\n", function (err) {
     if (err) return console.log(err);
-  })
+  });
+
+  tests.testUtils.forEach((t) => {
+    console.log(
+      "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
+    );
+    fs.appendFileSync(resultsDir + "/report.txt", "\t" + "- " + path.parse(t).dir + "/" + path.basename(t) + '\n', function (err) {
+      if (err) return console.log(err);
+    });
+  });
+
+  console.log();
 }
 
-//Write sync log
-Reporter.prototype.writeLog = function (mutant, hashOfRedundant) {
-  fs.appendFileSync(resultsDir + "/log.txt", mutant.hash() + "; " + mutant.file + "; " + mutant.operator + "; " + mutant.start + "; " + mutant.end + "; " + mutant.status + "; " + hashOfRedundant + "; " + mutant.testingTime + '\n', function (err) {
+
+
+/**
+ * Prints the files under test and saves them to report.txt
+ * @param {*} contracts list of contracts to be mutated
+ * @param {*} tests list of tests to be run
+ */
+Reporter.prototype.logTestsForContract = function (contract, tests) {
+
+  const cName = contract.split("/contracts")[1];
+  console.log(chalk.bold(cName) + " must be tested with:");
+
+  fs.appendFileSync(resultsDir + "/report.txt", "\n" + cName + " must be tested with:\n", function (err) {
     if (err) return console.log(err);
-  })
+  });
+  if (tests.testFiles.length > 0) {
+    tests.testFiles.forEach((t) => {
+      const tName = t.split("/test")[1];
+
+      console.log("\t" + tName);
+      fs.appendFileSync(resultsDir + "/report.txt", "    - " + tName + "\n", function (err) {
+        if (err) return console.log(err);
+      });
+    });
+    console.log();
+  } else {
+    console.log("\t None\n");
+    fs.appendFileSync(resultsDir + "/report.txt", "    - None \n", function (err) {
+      if (err) return console.log(err);
+    });
+  }
 }
 
-//Set the status of a mutant
+
+/**
+ * Saves the status of a mutant and pushes the mutant to respective array
+ * @param {*} mutant 
+ */
 Reporter.prototype.mutantStatus = function (mutant) {
   switch (mutant.status) {
     case "killed":
       this.killed.push(mutant);
       console.log("Mutant " + this.chalkMutant(mutant) + " was killed by tests.");
-      fs.writeFileSync(resultsDir + "/killed/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
+      fs.writeFileSync(resultsDir + "/killed/" + mutant.fileName() + '-' + mutant.hash() + ".json", mutant.toJson(), function (err) {
         if (err) return console.log(err);
       });
       break;
     case "live":
       this.survived.push(mutant);
       console.log("Mutant " + this.chalkMutant(mutant) + " survived testing.");
-      fs.writeFileSync(resultsDir + "/live/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
+      fs.writeFileSync(resultsDir + "/live/" + mutant.fileName() + '-' + mutant.hash() + ".json", mutant.toJson(), function (err) {
         if (err) return console.log(err);
       });
       break;
     case "stillborn":
       this.stillborn.push(mutant);
       console.log("Mutant " + this.chalkMutant(mutant) + " is stillborn.");
-      fs.writeFileSync(resultsDir + "/stillborn/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
+      fs.writeFileSync(resultsDir + "/stillborn/" + mutant.fileName() + '-' + mutant.hash() + ".json", mutant.toJson(), function (err) {
         if (err) return console.log(err);
       });
       break;
@@ -106,7 +195,7 @@ Reporter.prototype.mutantStatus = function (mutant) {
       console.log(
         "Mutant " + this.chalkMutant(mutant) + " is equivalent."
       );
-      fs.writeFileSync(resultsDir + "/equivalent/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
+      fs.writeFileSync(resultsDir + "/equivalent/" + mutant.fileName() + '-' + mutant.hash() + ".json", mutant.toJson(), function (err) {
         if (err) return console.log(err);
       });
       break;
@@ -115,7 +204,7 @@ Reporter.prototype.mutantStatus = function (mutant) {
       console.log(
         "Mutant " + this.chalkMutant(mutant) + " has timed out."
       );
-      fs.writeFileSync(resultsDir + "/timedout/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
+      fs.writeFileSync(resultsDir + "/timedout/" + mutant.fileName() + '-' + mutant.hash() + ".json", mutant.toJson(), function (err) {
         if (err) return console.log(err);
       });
       break;
@@ -124,68 +213,42 @@ Reporter.prototype.mutantStatus = function (mutant) {
       console.log(
         "Mutant " + this.chalkMutant(mutant) + " is redundant."
       );
-      fs.writeFileSync(resultsDir + "/redundant/mutant-" + mutant.hash() + ".sol", mutant.printMutation(), function (err) {
+      fs.writeFileSync(resultsDir + "/redundant/" + mutant.fileName() + '-' + mutant.hash() + ".json", mutant.toJson(), function (err) {
         if (err) return console.log(err);
       });
       break;
   }
 };
 
-//Prints preflight summary to console
-Reporter.prototype.preflightSummary = function (mutations) {
-  console.log("=============================================");
-  console.log(chalk.yellow.bold("> Preflight: ") + mutations.length + " mutation(s) found. ");
-  console.log("=============================================");
 
-  for (const mutation of mutations) {
-    console.log(mutation.file + ":" + mutation.hash() + ":");
-    process.stdout.write(mutation.diff());
-  }
-};
 
-Reporter.prototype.printFilesUnderTest = function (contracts, tests) {
-  const nc = contracts.length;
-  console.log();
-  console.log("=============================================");
-  console.log(chalk.yellow.bold("> Selecting Contract and Test Files"))
-  console.log("=============================================");
-  console.log();
+//Setup results.csv sync log
+Reporter.prototype.setupResultsCsv = function () {
+  fs.writeFileSync(resultsDir + "/results.csv", "Hash$File$Operator$Start$End$StartLine$EndLine$Original$Replacement$Status$RedundantTo$Time; \n", function (err) {
+    if (err) return console.log(err);
+  })
+}
 
-  if (nc == 0) console.log("Contracts to be mutated : " + chalk.green("none"));
-  else {
-    console.log("Contracts to be mutated : (" + nc + "):");
+//
+/**
+ * Save the test results of the current mutant to the results.csv synchronous log
+ * @param {*} mutant mutant object
+ * @param {*} hashOfRedundant optional hash of the mutant to which the current mutant is redundant
+ */
+Reporter.prototype.saveResultsCsv = function (mutant, hashOfRedundant) {
 
-    contracts.forEach((c) => {
-      console.log(
-        "\t" + path.parse(c).dir + "/" + chalk.bold(path.basename(c))
-      );
-    });
-  }
-  console.log();
+  var originalString = mutant.original;
+  originalString = originalString.replace(/[\n\r]/g, '');
 
-  const nt = tests.regressionTests.length;
-  if (nt == 0) console.log("Tests to be run : " + chalk.green("none"));
-  else {
-    console.log("Tests to be run : (" + nt + "):");
+  var replaceString = mutant.replace;
+  replaceString = replaceString.replace(/[\n\r]/g, '');
 
-    tests.regressionTests.forEach((t) => {
-      console.log(
-        "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
-      );
-    });
-  }
-  console.log();
+  const row = mutant.hash() + '$' + mutant.file + '$' + mutant.operator + '$' + mutant.start + '$' + mutant.end + '$' +
+    mutant.startLine + '$' + mutant.endLine + '$' + originalString + '$' + replaceString + '$' + mutant.status + '$' + hashOfRedundant + '$' + mutant.testingTime + '\n';
 
-  const nu = tests.utilsTests.length;
-  console.log("Tests utils : (" + nu + "):");
-
-  tests.utilsTests.forEach((t) => {
-    console.log(
-      "\t" + path.parse(t).dir + "/" + chalk.bold(path.basename(t))
-    );
-  });
-  console.log();
-
+  fs.appendFileSync(resultsDir + "/results.csv", row, function (err) {
+    if (err) return console.log(err);
+  })
 }
 
 
@@ -272,58 +335,46 @@ Reporter.prototype.preflightToExcel = function (mutations) {
 
 }
 
-
-//Prints test summary to console
-Reporter.prototype.testSummary = function () {
-  console.log('\n')
-  console.log("=============================================");
-  console.log(chalk.yellow.bold(" > Test Summary"))
-  console.log("=============================================");
-  console.log(
-    "• " + this.survived.length +
-    " mutants survived testing.\n" +
-    "• " + this.killed.length +
-    " mutants killed.\n" +
-    "• " + this.stillborn.length +
-    " mutants stillborn.\n" +
-    "• " + this.equivalent.length +
-    " mutants equivalent.\n",
-    "• " + this.redundant.length +
-    " mutants redundant.\n",
-    "• " + this.timedout.length +
-    " mutants timed-out.\n"
-  );
-  if (this.survived.length > 0) {
-    console.log(
-      "Live: " + this.survived.map(m => this.chalkMutant(m)).join(", ")
-    );
-  }
-};
-
-//Setup test report
-Reporter.prototype.setupReport = function () {
-  fs.writeFileSync(resultsDir + "/report.txt", "################################################ REPORT ################################################\n\n------------------------------------------- GENERATED MUTANTS ------------------------------------------ \n", function (err) {
-    if (err) return console.log(err);
-  });
-};
-
-//Save generated mutations to report
+/**
+ * Logs the mutants generated by the mutationGenerator to report.txt
+ * @param {*} fileString 
+ * @param {*} mutantString 
+ */
 Reporter.prototype.saveGeneratedMutants = function (fileString, mutantString) {
-
   fs.appendFileSync(resultsDir + "/report.txt", fileString + mutantString, { "flags": "a" }, function (err) {
     if (err) return console.log(err);
   });
 };
 
-//Save mutants generation time to report
-Reporter.prototype.saveGenerationTime = function (mutationsLength, generationTime) {
-  fs.appendFileSync(resultsDir + "/report.txt", "\n" + mutationsLength + " mutant(s) found in " + generationTime + " seconds. \n", function (err) {
-    if (err) return console.log(err);
-  });
-};
 
-//Save test results to report
-Reporter.prototype.printTestReport = function (time) {
+//Save generated mutations to csv
+Reporter.prototype.saveGeneratedMutantsCsv = function (mutations) {
+
+  fs.writeFileSync(resultsDir + "/generated.csv", "Hash$File$Operator$Start$End$StartLine$EndLine$Original$Replacement; \n", function (err) {
+    if (err) return console.log(err);
+  })
+
+  mutations.forEach(m => {
+    var originalString = m.original.toString();
+    originalString = originalString.replace(/[\n\r]/g, '');
+
+    var replaceString = m.replace.toString();
+    replaceString = replaceString.replace(/[\n\r]/g, '');
+
+    const row = m.hash() + '$' + m.file + '$' + m.operator + '$' + m.start + '$' + m.end + '$' + m.startLine + '$' + m.endLine + '$' + originalString + '$' + replaceString + '\n';
+
+    fs.appendFileSync(resultsDir + "/generated.csv", row, function (err) {
+      if (err) return console.log(err);
+    })
+  });
+}
+
+/**
+ * Logs the final test summary to console (and to report.txt)
+ * @param {*} time the total testing time
+ */
+Reporter.prototype.logAndSaveTestSummary = function (time) {
+
   const validMutants = this.survived.length + this.killed.length;
   const stillbornMutants = this.stillborn.length;
   const equivalentMutants = this.equivalent.length;
@@ -331,7 +382,28 @@ Reporter.prototype.printTestReport = function (time) {
   const timedoutMutants = this.timedout.length;
   const totalMutants = validMutants + stillbornMutants + timedoutMutants + equivalentMutants + redundantMutants;
   const mutationScore = ((this.killed.length / validMutants) * 100).toFixed(2);
-  var printString = "\n ---------------------- TEST REPORT --------------------- \n\n  "
+
+  console.log('\n')
+  console.log(chalk.yellow.bold("> Mutation Testing completed in " + time + " minutes. 👋"))
+  console.log("- Test Summary saved to .sumo/results/report.txt \n ")
+  console.log(
+    "ReSuMo generated " + totalMutants + " mutants: \n" +
+    "- " + this.survived.length + " mutants survived; \n" +
+    "- " + this.killed.length + " mutants killed; \n" +
+    "- " + this.stillborn.length + " mutants stillborn; \n" +
+    "- " + this.equivalent.length + " mutants equivalent; \n" +
+    "- " + this.redundant.length + " mutants redundant; \n" +
+    "- " + this.timedout.length + " mutants timed-out; \n"
+  );
+  if (mutationScore >= 80) {
+    console.log(chalk.bold("Mutation Score") + ": " + chalk.bold.green(mutationScore + " %"));
+  } else if (mutationScore >= 70 && mutationScore < 80) {
+    console.log(chalk.bold("Mutation Score") + ": " + chalk.bold.yellow(mutationScore + " %"));
+  } else {
+    console.log(chalk.bold("Mutation Score") + ": " + chalk.bold.red(mutationScore + " %"));
+  }
+
+  var printString = "\n\n >>> TEST REPORT \n\n  "
     + totalMutants + " mutant(s) tested in " + time + " minutes."
     + "\n\n - Total mutants: " + totalMutants
     + "\n\n - Valid mutants: " + validMutants;
@@ -339,27 +411,27 @@ Reporter.prototype.printTestReport = function (time) {
 
   printString = printString + "\n\n - Live mutants: " + this.survived.length;
   if (this.survived.length > 0)
-    printString = printString + "\n --- Live: " + JSON.stringify(this.survived.map(m => m.hash()).join(", "));
+    printString = printString + "\n --- Live: " + JSON.stringify(this.survived.map(m => m.id).join(", "));
 
   printString = printString + "\n\n - Killed mutants: " + this.killed.length;
   if (this.killed.length > 0)
-    printString = printString + "\n --- Killed: " + JSON.stringify(this.killed.map(m => m.hash()).join(", "));
+    printString = printString + "\n --- Killed: " + JSON.stringify(this.killed.map(m => m.id).join(", "));
 
   printString = printString + "\n\n - Equivalent mutants: " + this.equivalent.length;
   if (this.equivalent.length > 0)
-    printString = printString + "\n --- Equivalent: " + JSON.stringify(this.equivalent.map(m => m.hash()).join(", "));
+    printString = printString + "\n --- Equivalent: " + JSON.stringify(this.equivalent.map(m => m.id).join(", "));
 
   printString = printString + "\n\n - Redundant mutants: " + this.redundant.length;
   if (this.redundant.length > 0)
-    printString = printString + "\n --- Redundant: " + JSON.stringify(this.redundant.map(m => m.hash()).join(", "));
+    printString = printString + "\n --- Redundant: " + JSON.stringify(this.redundant.map(m => m.id).join(", "));
 
   printString = printString + "\n\n - Stillborn mutants: " + this.stillborn.length;
   if (this.stillborn.length > 0)
-    printString = printString + "\n --- Stillborn: " + JSON.stringify(this.stillborn.map(m => m.hash()).join(", "));
+    printString = printString + "\n --- Stillborn: " + JSON.stringify(this.stillborn.map(m => m.id).join(", "));
 
   printString = printString + "\n\n - Timed-Out mutants: " + this.timedout.length;
   if (this.timedout.length > 0)
-    printString = printString + "\n --- Timed-Out: " + JSON.stringify(this.timedout.map(m => m.hash()).join(", "));
+    printString = printString + "\n --- Timed-Out: " + JSON.stringify(this.timedout.map(m => m.id).join(", "));
 
   printString = printString + "\n\n Mutation Score = " + mutationScore;
 
@@ -368,15 +440,20 @@ Reporter.prototype.printTestReport = function (time) {
   });
 };
 
+/**
+ * Create the mutations.json artifact
+ */
 Reporter.prototype.setupMutationsReport = function () {
-  fs.writeFileSync(resultsDir + "/mutations.json", "", "utf8", function (err) {
+  fs.writeFileSync(artifactsDir + "/mutations.json", "", "utf8", function (err) {
     if (err) {
       return console.log(err);
     }
   });
 };
 
-/*Saves results for each operator to operators.xlsx */
+/**
+ * Saves the test results for each operator to operators.xlsx
+ */
 Reporter.prototype.saveOperatorsResults = function () {
 
   var workbook = new excel.Workbook
@@ -526,6 +603,11 @@ Reporter.prototype.saveOperatorsResults = function () {
   }
 };
 
+
+/**
+ *  Saves the test results for each mutant to testData.xlsx
+ * (Just for the mutants tested during the considered run)
+ */
 Reporter.prototype.saveTestData = function () {
   var workbook = new excel.Workbook
   var worksheet = workbook.addWorksheet("Sheet 1");
@@ -613,8 +695,8 @@ Reporter.prototype.saveTestData = function () {
   worksheet.cell(4, 3)
     .string("Contract")
     .style(headerStyle);
-  const mochaDir = resultsDir + '/mochawesome-report/'
-  const mutationsJsonDir = resultsDir + '/mutations.json'
+  const mochaDir = artifactsDir + '/mochawesome-report/'
+  const mutationsJsonDir = artifactsDir + '/mutations.json'
   const dirPath = path.join(mochaDir)
   let mochaDirItems = fs.readdirSync(dirPath);
   var columnCounter = 0
@@ -722,58 +804,68 @@ Reporter.prototype.saveTestData = function () {
   workbook.write("./" + resultsDir + "/testData.xlsx");
 }
 
+/**
+ * Extracts the test results from each report in the /mochawesome-report directory and adds them to the mutation object
+ * @param {*} mutant a tested mutant (live or killed)
+ * @returns the mutant with updated test results and status
+ */
+Reporter.prototype.getTestResults = function (mutant) {
 
-//Extracts test information from mochawesome reports and adds them to the mutation object
-Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
-
-  let hash = mutation.hash();
+  let hash = mutant.hash();
 
   //Rename report file
-  let pathJson = resultsDir + '/mochawesome-report/mochawesome.json';
-  let pathHtml = resultsDir + '/mochawesome-report/mochawesome.html';
+  let pathJson = artifactsDir + '/mochawesome-report/mochawesome.json';
 
-  if (mutation.status !== 'timedout') {
+  if (mutant.status !== 'timedout') {
 
     if (fs.existsSync(pathJson)) {
-      fs.renameSync(pathJson, resultsDir + '/mochawesome-report/mochawesome-' + hash + '.json', function (err) {
-        if (err) console.log('ERROR: ' + err);
+
+      //Renames the mutant report
+      fs.renameSync(pathJson, artifactsDir + '/mochawesome-report/mochawesome-' + hash + '.json', function (err) {
+        if (err) console.log('- ' + err);
       });
 
-      if (fs.existsSync(pathHtml)) {
-        fs.renameSync(pathHtml, resultsDir + '/mochawesome-report/mochawesome-' + hash + '.html', function (err) {
-          if (err) console.log('ERROR: ' + err);
-        });
-      }
-
-      //Extract test info
-      let path = resultsDir + '/mochawesome-report/mochawesome-' + hash + '.json'
+      //Extract current test info from the mochawesome report of the mutant
+      let path = artifactsDir + '/mochawesome-report/mochawesome-' + hash + '.json'
       let rawdata = fs.readFileSync(path);
       let json = JSON.parse(rawdata);
-      var check = false
+      var testFileIsKiller = false
       let testFiles = json.results[0].suites;
       let killers = [];
       let nonKillers = [];
-      for (let suite of testFiles) {
+      for (let testFile of testFiles) {
         let testFileInfo = []
-        testFileInfo.push(suite.file)
-        if (suite.suites.length === 0) {
-          if (suite.failures.length > 0) {
-            check = true
-          } else {
-            check = false
+        testFileInfo.push(testFile.file)
+
+        //If the test file does not contain test suites, check if it is a killer
+        if (testFile.suites.length === 0) {
+          if (testFile.failures.length > 0) {
+            testFileIsKiller = true
           }
         }
+        //If the test file contains test suites
         else {
-          for (let subSuite of suite.suites) {
-            if (subSuite.failures.length > 0) {
-              check = true
-              break;
-            } else {
-              check = false
+          for (let suite of testFile.suites) {
+            if (!testFileIsKiller) {
+              //If the test file does not contain sub-test suites
+              if (suite.suites.length === 0) {
+                if (suite.failures.length > 0) {
+                  testFileIsKiller = true
+                  break;
+                }
+              } else {
+                for (let subSuite of suite.suites) {
+                  if (subSuite.failures.length > 0) {
+                    testFileIsKiller = true
+                    break;
+                  }
+                }
+              }
             }
           }
         }
-        if (check) {
+        //Add test file to killers/nonKillers array
+        if (testFileIsKiller) {
           killers.push(testFileInfo[0])
         }
         else {
@@ -781,55 +873,112 @@ Reporter.prototype.extractMochawesomeReportInfo = function (mutation) {
         }
       }
 
-      mutation.killers = killers
-      mutation.nonKillers = nonKillers
+      mutant.killers = killers
+      mutant.nonKillers = nonKillers
 
-      mutationObj = new Object()
-      mutationObj.hash = mutation.hash()
-      mutationObj.operator = mutation.operator
-      mutationObj.status = mutation.status
-      mutationObj.file = mutation.file
-      mutationObj.killers = mutation.killers
-      mutationObj.nonKillers = mutation.nonKillers
-      this.mutations.push(mutationObj)
+      //If there is a results baseline, integrates the previous test results and updates the status
+      if (fs.existsSync(artifactsDir + "/mutationsBaseline.json")) {
+
+        let mutationsBaselinePath = artifactsDir + "/mutationsBaseline.json";
+        let rawBaselineData = fs.readFileSync(mutationsBaselinePath);
+        let mutationsBaselineJson = JSON.parse(rawBaselineData);
+        let prevMutant = mutationsBaselineJson.find(element => element.id === mutant.hash())
+
+        if (prevMutant) {
+          //console.log("Re-testing mutant:")
+          //console.log(prevMutant.id);
+
+          if (prevMutant.killers && prevMutant.killers.length > 0) {
+            for (let i = 0; i < prevMutant.killers.length; i++) {
+              if (mutant.killers.indexOf(prevMutant.killers[i]) == -1)
+                mutant.killers.push(prevMutant.killers[i])
+            }
+            mutant.status = "killed";
+          }
+          if (prevMutant.nonKillers && prevMutant.nonKillers.length > 0) {
+            for (let i = 0; i < prevMutant.nonKillers.length; i++) {
+              if (mutant.nonKillers.indexOf(prevMutant.nonKillers[i]) == -1)
+                mutant.nonKillers.push(prevMutant.nonKillers[i])
+            }
+          }
+        }
+      }
     } else {
-      console.log('ERROR: Could not access ' + resultsDir + '/mochawesome-report/mochawesome-' + hash + '.json');
+      console.log('ERROR: Could not access ' + artifactsDir + '/mochawesome-report/mochawesome-' + hash + '.json');
     }
+  }
+  return mutant;
+}
+
+/**
+ * Retrieves the mutations generated from unchanged contracts from the mutations baseline, and adds them to the current mutation testing results.
+ *  */
+Reporter.prototype.integrateUnchangedMutants = function (selectedContracts, callback) {
+  if (fs.existsSync(artifactsDir + "/mutationsBaseline.json")) {
+
+    let mutationsBaselinePath = artifactsDir + "/mutationsBaseline.json";
+    let rawBaselineData = fs.readFileSync(mutationsBaselinePath);
+    let mutationsBaselineJson = JSON.parse(rawBaselineData);
+
+    // async 
+    glob(config.contractsDir + config.contractsGlob, (err, files) => {
+      if (err) throw err;
+
+      files.forEach(file => {
+        if (!selectedContracts.includes(file)) {
+          const unchangedMutants = mutationsBaselineJson.filter(mutant => mutant.file === file)
+          unchangedMutants.forEach(unchangedMutant => {
+           // console.log("Pushing old results for mutations:")
+            if (unchangedMutant.status === "live") {
+
+              var um = new Mutation(
+                unchangedMutant.file,
+                unchangedMutant.start,
+                unchangedMutant.end,
+                unchangedMutant.startLine,
+                unchangedMutant.endLine,
+                unchangedMutant.original,
+                unchangedMutant.replace,
+                unchangedMutant.operator,
+                unchangedMutant.status,
+                unchangedMutant.killers,
+                unchangedMutant.nonKillers,
+                unchangedMutant.bytecode,
+                unchangedMutant.testingTime
+              )
+              this.survived.push(um)
+            }
+            else if (unchangedMutant.status === "killed") {
+              this.killed.push(unchangedMutant)
+            }
+          });
+        }
+      });
+      //console.log("> Unchanged mutants integrated.");
+      callback();
+    })
   } else {
-    mutationObj = new Object()
-    mutationObj.hash = mutation.hash()
-    mutationObj.operator = mutation.operator
-    mutationObj.status = mutation.status
-    mutationObj.file = mutation.file
-    mutationObj.killers = []
-    mutationObj.nonKillers = []
+    callback();
   }
 }
 
-//Saves the mutation to .sumo/mutations.json
-Reporter.prototype.saveMochawesomeReportInfo = function () {
+//Saves the mutations to .sumo/results/mutations.json
+Reporter.prototype.saveMutationsJSON = function () {
+  console.log("Saving mutations to json:");
+  let testedMutants = this.survived.concat(this.killed);
 
-  let jsonData = JSON.stringify(this.mutations, null, 1);
+  //remove the bytecode
+  testedMutants.forEach(m => {
+    m.bytecode = null;
+  });
 
-  fs.appendFileSync(resultsDir + "/mutations.json", jsonData, "utf8", function (err) {
+  let jsonData = JSON.stringify(testedMutants, null, 1);
+  fs.appendFileSync(artifactsDir + "/mutations.json", jsonData, "utf8", function (err) {
     if (err) {
       return console.log(err);
     }
     console.log("Done.");
   });
-
 };
-Reporter.prototype.restore = function () {
-  this.mutations = [];
-  this.survived = [];
-  this.killed = [];
-  this.stillborn = [];
-  this.equivalent = [];
-  this.redundant = [];
-  this.timedout = [];
-};
-Reporter.prototype.getMutants = function () {
-  return this.mutations
-}
 
 module.exports = Reporter
